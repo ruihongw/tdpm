@@ -22,6 +22,12 @@
   --q-white:#d8d8d8; --q-green:#5dbb63; --q-blue:#4a90d9;
   --q-purple:#9b59b6; --q-gold:#f1c40f; --q-red:#e74c3c;
   --tier-fanchen:#5d8a66; --tier-lingbao:#c9a84c; --tier-tianji:#c0392b;
+  --fs-display:2rem;
+  --fs-title:1.25rem;
+  --fs-body:0.95rem;
+  --fs-caption:0.8rem;
+  --fs-micro:0.7rem;
+  --font-numeric:'DIN Alternate','Roboto Mono','SF Mono',monospace;
 }
 * { margin:0; padding:0; box-sizing:border-box; }
 body {
@@ -45,10 +51,15 @@ body {
 @keyframes reveal-pop { 0%{transform:scale(0) rotate(180deg);opacity:0;} 60%{transform:scale(1.2) rotate(0deg);} 100%{transform:scale(1) rotate(0deg);opacity:1;} }
 
 /* 开始遮罩 */
-.start-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(245,236,215,0.97); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:200; transition:opacity 0.6s; }
+.start-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:200; transition:opacity 0.6s; overflow:hidden; }
+.start-overlay::before { content:''; position:absolute; top:0; left:0; width:100%; height:100%; background:radial-gradient(circle at 30% 20%,rgba(200,168,76,0.15),transparent 50%),radial-gradient(circle at 70% 80%,rgba(199,62,29,0.1),transparent 50%); pointer-events:none; }
+.start-overlay::after { content:''; position:absolute; top:0; left:0; width:100%; height:100%; background-image:radial-gradient(circle,rgba(200,168,76,0.1) 1px,transparent 1px); background-size:30px 30px; opacity:0.3; pointer-events:none; }
 .start-overlay.hidden { opacity:0; pointer-events:none; }
 .start-overlay h2 { font-family:'Ma Shan Zheng',serif; font-size:3.5rem; color:var(--ink-deep); letter-spacing:0.3em; margin-bottom:16px; text-shadow:2px 2px 8px var(--shadow); }
-.start-overlay p { font-size:1.05rem; color:var(--ink-black); opacity:0.7; max-width:560px; text-align:center; line-height:2; margin-bottom:30px; }
+.start-overlay p { font-size:1.05rem; color:var(--ink-black); max-width:560px; text-align:center; line-height:2; margin-bottom:30px; }
+.start-panel { background:rgba(255,255,255,0.08); backdrop-filter:blur(20px); border:1px solid rgba(200,168,76,0.3); border-radius:20px; padding:40px 36px; text-align:center; max-width:380px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.4); position:relative; z-index:1; }
+.start-panel h2 { font-family:'Ma Shan Zheng',serif; font-size:2.5rem; color:var(--gold); text-shadow:0 0 20px rgba(200,168,76,0.5); margin-bottom:8px; }
+.start-panel p { color:rgba(255,255,255,0.7); }
 .start-btn { padding:14px 48px; font-size:1.4rem; font-family:'Ma Shan Zheng',serif; background:linear-gradient(135deg,var(--vermilion),#8e1c1c); color:var(--paper); border:none; border-radius:8px; cursor:pointer; letter-spacing:0.3em; box-shadow:0 4px 20px rgba(192,57,43,0.4); transition:all 0.3s; }
 .start-btn:hover { transform:translateY(-2px); box-shadow:0 8px 30px rgba(192,57,43,0.6); }
 
@@ -58,8 +69,9 @@ body {
 .tier-select-overlay h2 { font-family:'Ma Shan Zheng',serif; font-size:2.2rem; color:var(--ink-deep); letter-spacing:0.2em; margin-bottom:8px; }
 .tier-select-overlay .tier-subtitle { font-size:0.95rem; opacity:0.6; margin-bottom:30px; }
 .tier-cards { display:flex; gap:20px; flex-wrap:wrap; justify-content:center; }
-.tier-card { width:240px; padding:24px 20px; border-radius:12px; cursor:pointer; transition:all 0.3s; text-align:center; position:relative; overflow:hidden; border:2px solid transparent; }
-.tier-card:hover { transform:translateY(-6px); }
+.tier-card { background:rgba(255,255,255,0.6); backdrop-filter:blur(8px); border:1.5px solid rgba(200,168,76,0.3); border-radius:12px; padding:20px; width:200px; text-align:center; cursor:pointer; transition:all 0.3s; position:relative; overflow:hidden; }
+.tier-card:hover { transform:translateY(-4px) scale(1.02); box-shadow:0 12px 40px rgba(200,168,76,0.2); border-color:var(--gold); }
+.tier-card:active { transform:translateY(-2px) scale(1.01); }
 .tier-card.fanchen { background:linear-gradient(135deg,rgba(93,138,102,0.15),rgba(93,138,102,0.05)); border-color:var(--tier-fanchen); }
 .tier-card.lingbao { background:linear-gradient(135deg,rgba(200,168,76,0.15),rgba(200,168,76,0.05)); border-color:var(--tier-lingbao); animation:glow-gold 2s ease-in-out infinite; }
 .tier-card.tianji { background:linear-gradient(135deg,rgba(192,57,43,0.15),rgba(192,57,43,0.05)); border-color:var(--tier-tianji); }
@@ -79,7 +91,7 @@ body {
 @media (max-width:768px) { .main-container { grid-template-columns:1fr; } }
 
 /* 左侧拍卖台 */
-.auction-stage { background:linear-gradient(135deg,rgba(245,236,215,0.9),rgba(232,220,192,0.95)); border:1px solid rgba(43,43,43,0.15); border-radius:8px; padding:20px; box-shadow:0 4px 20px var(--shadow),inset 0 0 60px rgba(200,168,76,0.05); position:relative; min-height:500px; }
+.auction-stage { background:var(--paper); border-radius:12px; padding:16px; margin:0; position:relative; box-shadow:0 8px 32px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.5); overflow:hidden; }
 .auction-stage::before,.auction-stage::after { content:''; position:absolute; width:100%; height:6px; left:0; background:linear-gradient(90deg,transparent,var(--gold),transparent); opacity:0.4; }
 .auction-stage::before { top:0; } .auction-stage::after { bottom:0; }
 
@@ -115,9 +127,9 @@ body {
 .warehouse-cell.q-white { background:rgba(216,216,216,0.3); border-color:var(--q-white); }
 .warehouse-cell.q-green { background:rgba(93,187,99,0.2); border-color:var(--q-green); }
 .warehouse-cell.q-blue { background:rgba(74,144,217,0.2); border-color:var(--q-blue); }
-.warehouse-cell.q-purple { background:rgba(155,89,182,0.2); border-color:var(--q-purple); }
-.warehouse-cell.q-gold { background:rgba(241,196,15,0.2); border-color:var(--q-gold); box-shadow:0 0 8px rgba(241,196,15,0.3); }
-.warehouse-cell.q-red { background:rgba(231,76,60,0.2); border-color:var(--q-red); box-shadow:0 0 12px rgba(231,76,60,0.4); }
+.warehouse-cell.q-purple { background:linear-gradient(135deg,rgba(155,89,182,0.2),rgba(155,89,182,0.08)); border:2px solid var(--q-purple); box-shadow:0 0 8px rgba(155,89,182,0.3); }
+.warehouse-cell.q-gold { background:linear-gradient(135deg,rgba(241,196,15,0.25),rgba(241,196,15,0.1)); border:2px solid var(--q-gold); box-shadow:0 0 12px rgba(241,196,15,0.4), inset 0 0 16px rgba(241,196,15,0.15); }
+.warehouse-cell.q-red { background:linear-gradient(135deg,rgba(231,76,60,0.25),rgba(231,76,60,0.1)); border:2px solid var(--q-red); box-shadow:0 0 16px rgba(231,76,60,0.5), inset 0 0 20px rgba(231,76,60,0.2); }
 .warehouse-cell .cell-icon { font-size:0.9rem; line-height:1; }
 .warehouse-cell .cell-name { font-size:0.75rem; text-align:center; padding:0 2px; line-height:1.2; }
 .warehouse-cell .cell-value { font-size:0.75rem; color:var(--gold); }
@@ -232,11 +244,11 @@ body {
   .warehouse-cell { aspect-ratio:auto !important; min-height:42px !important; padding:2px !important; }
   .warehouse-cell .cell-icon { font-size:0.7rem !important; }
   .warehouse-cell.unknown::after { font-size:0.8rem !important; }
-  .warehouse-cell .cell-name { font-size:0.55rem !important; }
-  .warehouse-cell .cell-value { font-size:0.55rem !important; }
+  .warehouse-cell .cell-name { font-size:var(--fs-micro) !important; }
+  .warehouse-cell .cell-value { font-size:var(--fs-micro) !important; }
   /* 线索区折叠 */
   .clues-area { max-height:120px !important; overflow-y:auto; }
-  .clue-item { font-size:0.75rem !important; padding:3px 6px !important; }
+  .clue-item { font-size:var(--fs-caption) !important; padding:3px 6px !important; }
   /* 出价区紧凑 */
   .bid-info { gap:4px !important; }
   .bid-info-item { font-size:0.7rem !important; }
@@ -251,7 +263,10 @@ body {
   .bid-log { max-height:80px !important; font-size:0.7rem !important; }
   /* NPC卡片横向滚动 */
   .npc-list { display:flex; overflow-x:auto; gap:8px; padding-bottom:4px; }
-  .npc-card { min-width:120px; flex-shrink:0; }
+  .npc-card { min-width:100px; flex-shrink:0; padding:6px; }
+  .npc-avatar { font-size:1rem; width:24px; height:24px; }
+  .npc-name { font-size:0.7rem; }
+  .npc-bid-status { font-size:0.6rem; }
   /* 弹窗适配 */
   .deal-panel { padding:20px 24px !important; max-width:90% !important; }
   .deal-panel h3 { font-size:1.5rem !important; }
@@ -268,7 +283,6 @@ body {
   .tier-card h3 { font-size:1.1rem !important; }
   .tier-card p { font-size:0.75rem !important; }
   /* 侧边栏可折叠 */
-  .sidebar-toggle { display:block !important; }
   .sidebar-content { display:none; }
   .sidebar-content.expanded { display:block; }
   /* bid-info图标式紧凑显示 */
@@ -284,6 +298,8 @@ body {
   /* 技能栏横向滚动 */
   .skill-bar { display:flex; overflow-x:auto; flex-wrap:nowrap !important; padding-bottom:4px; }
   .skill-bar button { flex-shrink:0; }
+  /* 连击指示器移动端优化 */
+  .combo-indicator { font-size:0.75rem; padding:2px 8px; }
   /* 防止双击缩放 */
   * { -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
   input { -webkit-user-select: text; }
@@ -312,7 +328,7 @@ body {
 /* 结算弹窗 */
 .settlement-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index:180; }
 .settlement-overlay.show { display:flex; }
-.settlement-card { background:linear-gradient(135deg,var(--paper),var(--paper-dark)); border:2px solid var(--gold); border-radius:12px; padding:28px 40px; text-align:center; box-shadow:0 8px 40px rgba(0,0,0,0.4); max-width:480px; }
+.settlement-card { background:linear-gradient(135deg,rgba(245,236,215,0.98),rgba(235,225,200,0.98)); border:2px solid var(--gold); border-radius:16px; padding:24px 28px; max-width:380px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.3); text-align:center; }
 .settlement-card h3 { font-family:'Ma Shan Zheng',serif; font-size:1.8rem; color:var(--vermilion); margin-bottom:12px; }
 .settlement-card .winner-name { font-size:1.3rem; color:var(--ink-deep); margin:8px 0; }
 .settlement-card .final-price { font-size:1.5rem; color:var(--gold); font-weight:bold; margin:8px 0; }
@@ -347,15 +363,15 @@ body {
 .deal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); align-items:center; justify-content:center; z-index:230; }
 .deal-overlay.show { display:flex; animation:dealOverlayIn 0.3s ease; }
 @keyframes dealOverlayIn { from { opacity:0; } to { opacity:1; } }
-.deal-panel { position:relative; background:linear-gradient(135deg,var(--paper),var(--paper-dark)); border:3px solid var(--gold); border-radius:16px; padding:32px 48px; text-align:center; box-shadow:0 0 60px rgba(200,168,76,0.4), 0 8px 40px rgba(0,0,0,0.5); max-width:480px; width:90%; animation:dealPanelIn 0.5s cubic-bezier(0.34,1.56,0.64,1); overflow:hidden; }
+.deal-panel { background:linear-gradient(135deg,rgba(26,26,46,0.95),rgba(15,52,96,0.95)); backdrop-filter:blur(20px); border:2px solid var(--gold); border-radius:20px; padding:32px 40px; text-align:center; max-width:360px; width:90%; box-shadow:0 0 60px rgba(200,168,76,0.3), 0 20px 60px rgba(0,0,0,0.5); position:relative; }
 @keyframes dealPanelIn { from { opacity:0; transform:scale(0.7) translateY(30px); } to { opacity:1; transform:scale(1) translateY(0); } }
 .deal-glow { position:absolute; top:50%; left:50%; width:300px; height:300px; border-radius:50%; background:radial-gradient(circle,rgba(200,168,76,0.15),transparent 70%); transform:translate(-50%,-50%); animation:dealGlow 2s ease-in-out infinite; pointer-events:none; }
 @keyframes dealGlow { 0%,100% { opacity:0.5; transform:translate(-50%,-50%) scale(1); } 50% { opacity:1; transform:translate(-50%,-50%) scale(1.2); } }
 .deal-icon { font-size:3.5rem; margin-bottom:8px; animation:dealIconBounce 0.6s ease 0.2s both; }
 @keyframes dealIconBounce { from { transform:scale(0) rotate(-180deg); } to { transform:scale(1) rotate(0); } }
-.deal-panel h3 { font-family:'Ma Shan Zheng',serif; font-size:2rem; color:var(--vermilion); margin-bottom:12px; text-shadow:0 2px 8px rgba(199,62,29,0.2); }
+.deal-panel h3 { font-family:'Ma Shan Zheng',serif; font-size:2rem; color:var(--gold); text-shadow:0 0 16px rgba(200,168,76,0.6); margin-bottom:12px; }
 .deal-winner { font-size:1.4rem; font-family:'ZCOOL XiaoWei',serif; color:var(--ink-deep); margin-bottom:8px; animation:dealTextIn 0.5s ease 0.4s both; }
-.deal-price { font-size:2.2rem; font-weight:bold; color:var(--gold); margin:8px 0; animation:dealPriceIn 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.6s both; text-shadow:0 2px 4px rgba(200,168,76,0.3); }
+.deal-price { font-family:var(--font-numeric); font-size:2.5rem; color:var(--gold); font-weight:bold; text-shadow:0 0 20px rgba(200,168,76,0.4); margin:12px 0; }
 @keyframes dealPriceIn { from { opacity:0; transform:scale(0.5); } to { opacity:1; transform:scale(1); } }
 @keyframes dealTextIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
 .deal-warehouse { font-size:0.9rem; opacity:0.6; margin-bottom:12px; animation:dealTextIn 0.5s ease 0.8s both; }
@@ -371,14 +387,14 @@ body {
 /* 藏品揭晓弹窗 */
 .reveal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); align-items:center; justify-content:center; z-index:220; }
 .reveal-overlay.show { display:flex; }
-.reveal-panel { background:linear-gradient(135deg,var(--paper),var(--paper-dark)); border:2px solid var(--gold); border-radius:12px; padding:24px 32px; text-align:center; box-shadow:0 8px 40px rgba(0,0,0,0.5); max-width:560px; width:90%; }
+.reveal-panel { background:linear-gradient(135deg,rgba(26,26,46,0.95),rgba(15,52,96,0.95)); backdrop-filter:blur(20px); border:2px solid var(--gold); border-radius:20px; padding:24px; max-width:360px; width:90%; box-shadow:0 0 40px rgba(200,168,76,0.2); text-align:center; color:white; }
 .reveal-panel h3 { font-family:'Ma Shan Zheng',serif; font-size:1.6rem; color:var(--vermilion); margin-bottom:8px; }
 .reveal-wh-name { font-size:0.9rem; opacity:0.6; margin-bottom:12px; }
 .reveal-stage { min-height:160px; display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; }
 .reveal-item { animation:revealFadeIn 0.5s ease; }
 @keyframes revealFadeIn { from { opacity:0; transform:translateY(20px) scale(0.9); } to { opacity:1; transform:translateY(0) scale(1); } }
 .reveal-item .ri-icon { font-size:2.5rem; margin-bottom:8px; }
-.reveal-item .ri-name { font-size:1.3rem; font-family:'ZCOOL XiaoWei',serif; color:var(--ink-deep); margin-bottom:4px; }
+.reveal-item .ri-name { color:var(--gold); font-family:'Ma Shan Zheng',serif; font-size:1.5rem; text-shadow:0 0 12px rgba(200,168,76,0.5); margin-bottom:4px; }
 .reveal-item .ri-quality { font-size:0.9rem; margin-bottom:4px; font-weight:bold; }
 .reveal-item .ri-type { font-size:0.8rem; opacity:0.5; margin-bottom:8px; }
 .reveal-item .ri-value { font-size:1.2rem; color:var(--gold); font-weight:bold; }
@@ -508,12 +524,33 @@ body {
 @keyframes btnPulse { 0%,100% { box-shadow:0 2px 8px rgba(199,62,29,0.3); } 50% { box-shadow:0 4px 16px rgba(199,62,29,0.5); } }
 .start-btn { animation:btnPulse 2s ease-in-out infinite; }
 
-/* 固定灵石栏（始终显示，不随侧边栏折叠） */
-.lingshi-bar-fixed { display:inline-block; padding:3px 12px; background:linear-gradient(135deg,rgba(200,168,76,0.15),rgba(200,168,76,0.05)); border:1px solid var(--gold); border-radius:16px; font-size:0.85rem; color:var(--ink-deep); margin-top:4px; }
-.lingshi-bar-fixed strong { color:var(--gold); font-size:1rem; }
+/* 数值等宽字体类 */
+.text-numeric { font-family:var(--font-numeric); font-weight:bold; letter-spacing:0.02em; }
+
+/* 底部固定操作栏 */
+.bottom-action-bar { position:sticky; bottom:0; left:0; right:0; background:rgba(245,236,215,0.98); backdrop-filter:blur(12px); box-shadow:0 -4px 20px rgba(0,0,0,0.08); padding:8px 12px; z-index:50; border-top:1px solid rgba(200,168,76,0.2); }
+
+/* 顶部固定资源栏 */
+.resource-bar-fixed { display:flex; justify-content:space-around; align-items:center; padding:6px 12px; background:rgba(43,43,43,0.04); border-radius:10px; margin:4px 0; gap:4px; }
+.resource-bar-fixed .rb-item { display:flex; flex-direction:column; align-items:center; font-size:var(--fs-micro); }
+.resource-bar-fixed .rb-icon { font-size:1rem; line-height:1; }
+.resource-bar-fixed .rb-value { font-family:var(--font-numeric); font-weight:bold; font-size:var(--fs-caption); color:var(--ink-deep); }
+
+/* Toast通知系统 */
+.toast-container { position:fixed; top:50px; left:50%; transform:translateX(-50%); z-index:300; pointer-events:none; display:flex; flex-direction:column; align-items:center; gap:6px; max-width:90%; }
+.toast-msg { background:rgba(43,43,43,0.9); color:var(--paper); padding:8px 16px; border-radius:20px; font-size:var(--fs-caption); box-shadow:0 4px 16px rgba(0,0,0,0.2); animation:toastIn 0.3s ease, toastOut 0.3s ease 2.7s forwards; max-width:100%; text-align:center; }
+@keyframes toastIn { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
+@keyframes toastOut { to { opacity:0; transform:translateY(-10px); } }
+.toast-msg.important { background:linear-gradient(135deg,rgba(199,62,29,0.95),rgba(192,57,43,0.9)); border:1px solid var(--gold); }
+
+/* 右侧滑入抽屉 */
+.sidebar-drawer { position:fixed; top:0; right:0; width:280px; height:100%; background:var(--paper); box-shadow:-8px 0 32px rgba(0,0,0,0.15); transform:translateX(100%); transition:transform 0.3s ease; z-index:160; overflow-y:auto; padding:16px; }
+.sidebar-drawer.open { transform:translateX(0); }
+.sidebar-drawer-toggle { position:fixed; top:50%; right:0; transform:translateY(-50%); width:32px; height:60px; background:var(--gold); border-radius:8px 0 0 8px; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:161; box-shadow:-2px 0 8px rgba(0,0,0,0.1); font-size:0.7rem; color:var(--paper); writing-mode:vertical-rl; }
 </style>
 </head>
 <body>
+<div class="toast-container" id="toastContainer"></div>
 <canvas id="spiritCanvas"></canvas>
 
 <!-- 音频控制按钮 -->
@@ -521,6 +558,7 @@ body {
 
 <!-- 开始遮罩 -->
 <div class="start-overlay" id="startOverlay">
+  <div class="start-panel">
   <h2>天道拍卖行</h2>
   <p>
     天道无常，机缘流转。<br>
@@ -538,6 +576,7 @@ body {
   <button class="start-btn" onclick="enterTierSelect()">入局</button>
   <button class="btn btn-ghost" style="margin-top:12px;font-size:1rem;" onclick="openShop(true)">修炼坊市（局外养成）</button>
   <button class="btn btn-ghost" style="margin-top:8px;font-size:1rem;" onclick="openCultivation()">修仙洞府（挂机修炼）</button>
+  </div>
 </div>
 
 <!-- 拍卖场选择 -->
@@ -572,8 +611,17 @@ body {
     <div class="header">
       <h1>天道拍卖行</h1>
       <span class="tier-badge" id="tierBadge"></span>
+      <div style="position:absolute;top:8px;right:8px;display:flex;gap:4px;">
+        <button id="speedToggle" onclick="toggleSpeed()" style="padding:2px 8px;font-size:0.7rem;background:rgba(200,168,76,0.15);border:1px solid rgba(200,168,76,0.3);border-radius:12px;cursor:pointer;color:var(--ink-deep);">×1</button>
+        <button id="skipBtn" onclick="skipCurrent()" style="padding:2px 8px;font-size:0.7rem;background:rgba(199,62,29,0.1);border:1px solid rgba(199,62,29,0.3);border-radius:12px;cursor:pointer;color:var(--vermilion);">⏭跳过</button>
+      </div>
       <div class="subtitle">第 <span id="itemNum">1</span> 个仓库 · 当前第 <span id="roundNum">1</span>/5 轮</div>
-      <div class="lingshi-bar-fixed" id="lingshiBarFixed"><span style="opacity:0.6;font-size:0.75rem;">持有灵石</span> 💎 <strong id="fixedLingshi">3000</strong></div>
+      <div class="resource-bar-fixed" id="resourceBarFixed">
+        <div class="rb-item"><span class="rb-icon">💎</span><span class="rb-value" id="rbLingshi">3000</span></div>
+        <div class="rb-item"><span class="rb-icon">⏳</span><span class="rb-value" id="rbShouyuan">100</span></div>
+        <div class="rb-item"><span class="rb-icon">🔥</span><span class="rb-value" id="rbZhouhuo">0</span></div>
+        <div class="rb-item"><span class="rb-icon">⚡</span><span class="rb-value" id="rbTdao">0</span></div>
+      </div>
     </div>
 
     <div class="round-progress" id="roundProgress"></div>
@@ -600,7 +648,7 @@ body {
 
     <!-- 竞价信息 -->
     <div class="bid-info">
-      <div class="bid-info-item"><div class="label">仓库底价</div><div class="value"><span class="base-price-badge" id="basePrice">💰 --</span></div></div>
+      <div class="bid-info-item"><div class="label">仓库底价</div><div class="value"><span class="base-price-badge text-numeric" id="basePrice">💰 --</span></div></div>
       <div class="bid-info-item"><div class="label">上轮出价分布</div><div class="value" id="bidHint" style="font-size:0.9rem;">--</div></div>
       <div class="bid-info-item"><div class="label">你的上轮出价</div><div class="value" id="myLastBid">--</div></div>
     </div>
@@ -609,6 +657,7 @@ body {
     <div class="estimate-hint" id="estimateHint"></div>
 
     <!-- 出价建议 -->
+    <div class="bottom-action-bar">
     <div class="bid-suggestions" id="bidSuggestions"></div>
 
     <!-- P1-5: 技能栏 + P1-3: 连击指示器 -->
@@ -626,11 +675,13 @@ body {
     <div id="waitHint" style="text-align:center;font-size:0.85rem;opacity:0.5;padding:4px;display:none;">已提交出价，等待其他道友...</div>
 
     <div class="bid-log" id="bidLog"><div style="text-align:center;opacity:0.4;padding:8px;">等待竞价开始...</div></div>
+    </div>
   </div>
 
   <!-- 侧边栏 -->
+    <div class="sidebar-drawer-toggle" onclick="toggleSidebarDrawer()">道友信息</div>
+    <div class="sidebar-drawer" id="sidebarDrawer">
   <div class="sidebar">
-    <div class="sidebar-toggle" onclick="toggleSidebar()" style="display:none;text-align:center;padding:6px;background:rgba(43,43,43,0.05);border-radius:6px;font-size:0.8rem;cursor:pointer;">📋 道友信息 ▼</div>
     <div class="sidebar-content">
     <div class="player-panel">
       <div class="panel-title">
@@ -668,6 +719,7 @@ body {
     </div>
     </div>
   </div>
+    </div>
 </div>
 
 <!-- 天道使者播报 -->
@@ -733,7 +785,7 @@ body {
     <div class="deal-icon" id="dealIcon">🏆</div>
     <h3 id="dealTitle">天机已定</h3>
     <div class="deal-winner" id="dealWinner"></div>
-    <div class="deal-price" id="dealPrice"></div>
+    <div class="deal-price text-numeric" id="dealPrice"></div>
     <div class="deal-warehouse" id="dealWarehouse"></div>
     <div class="deal-hint">即将揭晓藏品...</div>
   </div>
@@ -1041,6 +1093,31 @@ let G = {
   pendingEvent:null, // P1-4: 当前仓库的随机事件
   flowpoolItems:[], // P2-7: 流拍池
 };
+
+let G_SPEED = 1; // 倍速：1, 2, 3
+let G_SKIP_CALLBACK = null; // 跳过回调
+
+function toggleSpeed() {
+  G_SPEED = G_SPEED === 1 ? 2 : (G_SPEED === 2 ? 3 : 1);
+  document.getElementById('speedToggle').textContent = '×' + G_SPEED;
+}
+function skipCurrent() {
+  if (G_SKIP_CALLBACK) {
+    const cb = G_SKIP_CALLBACK;
+    G_SKIP_CALLBACK = null;
+    cb();
+  }
+}
+// 带倍速的延迟函数
+function delay(fn, ms) {
+  const adjustedMs = ms / G_SPEED;
+  const timer = setTimeout(() => {
+    G_SKIP_CALLBACK = null;
+    fn();
+  }, adjustedMs);
+  G_SKIP_CALLBACK = () => { clearTimeout(timer); fn(); };
+  return timer;
+}
 
 let player = {
   id:'p1', name:'李逍遥', sect:'仙灵岛', isPlayer:true,
@@ -1954,7 +2031,7 @@ function startItem() {
 
   announce(`天道使者：「第${G.itemNum}个仓库已呈于台前，内含${G.currentWarehouse.itemCount}件藏品，底价${G.currentWarehouse.basePrice}灵石。共${TOTAL_ROUNDS}轮暗拍，线索逐轮揭露，出价针对整个仓库。」`);
 
-  setTimeout(()=>advanceRound(), 2000);
+  delay(()=>advanceRound(), 2000);
 }
 
 // ============================================================
@@ -2418,12 +2495,9 @@ function renderBidSuggestions() {
   }
 
   // 渲染按钮
-  container.innerHTML = suggestions.map(s => `
-    <button class="bid-suggestion-btn" onclick="setBidInput(${s.value})" title="${s.tip}">
-      <span class="sug-label">${s.label}</span>
-      <span class="sug-value">${s.value}</span>
-    </button>
-  `).join('');
+  container.innerHTML = suggestions.map(s =>
+    `<button class="bid-suggestion-btn" onclick="setBidInput(${s.value})" title="${s.tip}" style="padding:6px 14px;font-size:0.8rem;background:linear-gradient(135deg,rgba(200,168,76,0.15),rgba(200,168,76,0.05));border:1px solid rgba(200,168,76,0.3);border-radius:16px;cursor:pointer;color:var(--ink-deep);transition:all 0.2s;white-space:nowrap;" onmouseover="this.style.background='linear-gradient(135deg,rgba(200,168,76,0.3),rgba(200,168,76,0.15))';this.style.transform='scale(1.05)';" onmouseout="this.style.background='linear-gradient(135deg,rgba(200,168,76,0.15),rgba(200,168,76,0.05))';this.style.transform='scale(1)';"><strong>${s.label}</strong> <span class="text-numeric" style="font-family:var(--font-numeric);">${s.value}</span></button>`
+  ).join('');
 }
 
 // 点击建议按钮自动填入出价框
@@ -2517,7 +2591,7 @@ function checkAllSubmitted() {
   const totalParticipants = 1 + npcs.length; // P4-13: 入魔者仍可受限出价，计入参与人数
   const actedCount = roundBids.length + (G.aiPassedThisRound?.length||0) + (G.playerPassedThisRound?1:0);
   if (actedCount >= totalParticipants) {
-    setTimeout(() => endRound(), 600); // P0-2: 结算延迟从1秒缩短至0.6秒
+    delay(() => endRound(), 600); // P0-2: 结算延迟从1秒缩短至0.6秒
   }
 }
 
@@ -2997,7 +3071,7 @@ function settleMultiRound(forced, killWinner) {
 
   // 成交确认弹窗 → 藏品揭晓 → 结算弹窗
   // P1-1修复：延迟从800ms改为2500ms，等4条播报播完后再弹窗
-  setTimeout(() => {
+  delay(() => {
     showDealPopup(winnerId, finalPrice, () => {
       revealWarehouseItems(winnerId, finalPrice, () => {
         showSettlementPopup(winnerId, finalPrice);
@@ -3132,7 +3206,7 @@ function revealWarehouseItems(winnerId, finalPrice, onComplete) {
 
       // 最后一件时，显示总价对比
       if (idx === items.length - 1) {
-        const t2 = setTimeout(() => finishReveal(), REVEAL_INTERVAL);
+        const t2 = delay(() => finishReveal(), REVEAL_INTERVAL);
         revealTimers.push(t2);
       }
     }, idx * REVEAL_INTERVAL);
@@ -3367,7 +3441,7 @@ function renderSkillBar() {
   PLAYER_SKILLS.forEach(s => {
     const used = G.skillsUsed[s.id];
     const canAfford = G.skillTokens >= s.cost && !used;
-    bar.innerHTML += `<button class="skill-btn ${canAfford?'':'disabled'}" onclick="useSkill('${s.id}')" title="${s.desc}">${s.icon}${s.name}(${s.cost}令)${used?'✓':''}</button>`;
+    bar.innerHTML += `<button class="skill-btn ${canAfford?'':'disabled'}" onclick="useSkill('${s.id}')" title="${s.desc}" style="padding:6px 10px; background:linear-gradient(135deg,rgba(107,142,63,0.15),rgba(107,142,63,0.05)); border:1px solid rgba(107,142,63,0.3); border-radius:8px; cursor:pointer; font-size:0.75rem; color:var(--ink-deep); transition:all 0.2s;">${s.icon}${s.name}(${s.cost}令)${used?'✓':''}</button>`;
   });
 }
 
@@ -3455,6 +3529,16 @@ function endGame() {
   // 在结算描述中添加修为信息
   const settleDescEl = document.getElementById('settleDesc');
   if (settleDescEl) settleDescEl.innerHTML += `<br><span style="color:var(--vermilion);">修炼所得：+${xiuweiEarned}修为</span>`;
+  // 结算数据汇总
+  if (settleDescEl) {
+    const warehousesWon = G.warehouseHistory.filter(w=>w.isPlayerWinner).length;
+    settleDescEl.innerHTML += `<div style="margin-top:12px;padding:12px;background:rgba(200,168,76,0.08);border-radius:8px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.8rem;">
+    <div>📦 仓库拍得：<strong>${warehousesWon}/${G.totalItems}</strong></div>
+    <div>💰 净盈亏：<strong style="color:${G.sessionProfit>=0?'var(--jade)':'var(--vermilion)'};">${G.sessionProfit>=0?'+':''}${G.sessionProfit}</strong></div>
+    <div>🔮 修炼所得：<strong>+${xiuweiEarned||0}修为</strong></div>
+    <div>⚡ 天道积分：<strong>+${tdaoEarned||0}</strong></div>
+  </div>`;
+  }
   document.getElementById('nextBtn').textContent = '前往修炼坊市';
   document.getElementById('nextBtn').onclick = () => {
     document.getElementById('settlementOverlay').classList.remove('show');
@@ -3706,13 +3790,18 @@ function repayDebt() {
 function updatePlayerUI() {
   const oldLingshi = window._lastLingshi || player.lingshi;
   document.getElementById('resLingshi').textContent = player.lingshi;
-  // 同步更新固定灵石栏
-  const fixedEl = document.getElementById('fixedLingshi');
-  if (fixedEl) fixedEl.textContent = player.lingshi;
+  // 更新顶部常驻资源栏
+  const rbLingshi = document.getElementById('rbLingshi');
+  if (rbLingshi) rbLingshi.textContent = player.lingshi;
+  const rbShouyuan = document.getElementById('rbShouyuan');
+  if (rbShouyuan) rbShouyuan.textContent = player.shouyuan;
+  const rbZhouhuo = document.getElementById('rbZhouhuo');
+  if (rbZhouhuo) rbZhouhuo.textContent = player.zhouhuo;
+  const rbTdao = document.getElementById('rbTdao');
+  if (rbTdao) rbTdao.textContent = meta.tdaoPoints;
   if (oldLingshi !== player.lingshi) {
     const el = document.getElementById('resLingshi');
     if (el) { el.classList.add('lingshi-change'); setTimeout(() => el.classList.remove('lingshi-change'), 500); }
-    if (fixedEl) { fixedEl.classList.add('lingshi-change'); setTimeout(() => fixedEl.classList.remove('lingshi-change'), 500); }
   }
   window._lastLingshi = player.lingshi;
   document.getElementById('resShouyuan').textContent = player.shouyuan;
@@ -3812,16 +3901,35 @@ function switchTab(tabName) {
     document.getElementById('tabHistory').classList.add('active');
   }
 }
-function toggleSidebar() {
-  const content = document.querySelector('.sidebar-content');
-  if (content) content.classList.toggle('expanded');
+function toggleSidebarDrawer() {
+  const drawer = document.getElementById('sidebarDrawer');
+  if (drawer) drawer.classList.toggle('open');
+}
+function showToast(msg, important = false) {
+  const container = document.getElementById('toastContainer');
+  if (!container) return;
+  const toast = document.createElement('div');
+  toast.className = 'toast-msg' + (important ? ' important' : '');
+  toast.innerHTML = msg;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+  // 限制最多显示3条
+  while (container.children.length > 3) {
+    container.removeChild(container.firstChild);
+  }
 }
 // 播报队列系统：避免连续播报互相覆盖
 let announceQueue = [];
 let announceTimer = null;
 let announceProcessing = false;
 
-function announce(text) { showAnnouncement(text); }
+function announce(text) {
+  showAnnouncement(text);
+  // 重要消息同时显示Toast（不遮挡操作）
+  if (text.includes('秒杀') || text.includes('成交') || text.includes('流拍') || text.includes('突破') || text.includes('盲买') || text.includes('神识') || text.includes('元婴')) {
+    showToast(text.replace(/天道使者：「/g, '').replace(/」/g, ''), true);
+  }
+}
 function showAnnouncement(text) {
   announceQueue.push(text);
   if (!announceProcessing) processAnnounceQueue();
