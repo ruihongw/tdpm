@@ -228,10 +228,12 @@ body {
   .header h2 { font-size:1.3rem !important; }
   .header .subtitle { font-size:0.7rem !important; }
   /* 仓库网格适配 */
-  .warehouse-grid { grid-template-columns:repeat(3,1fr) !important; gap:4px !important; }
-  .warehouse-cell { min-height:50px !important; padding:4px !important; }
-  .warehouse-cell .cell-name { font-size:0.65rem !important; }
-  .warehouse-cell .cell-value { font-size:0.6rem !important; }
+  .warehouse-grid { grid-template-columns:repeat(4,1fr) !important; gap:3px !important; }
+  .warehouse-cell { aspect-ratio:auto !important; min-height:42px !important; padding:2px !important; }
+  .warehouse-cell .cell-icon { font-size:0.7rem !important; }
+  .warehouse-cell.unknown::after { font-size:0.8rem !important; }
+  .warehouse-cell .cell-name { font-size:0.55rem !important; }
+  .warehouse-cell .cell-value { font-size:0.55rem !important; }
   /* 线索区折叠 */
   .clues-area { max-height:120px !important; overflow-y:auto; }
   .clue-item { font-size:0.75rem !important; padding:3px 6px !important; }
@@ -571,7 +573,7 @@ body {
       <h1>天道拍卖行</h1>
       <span class="tier-badge" id="tierBadge"></span>
       <div class="subtitle">第 <span id="itemNum">1</span> 个仓库 · 当前第 <span id="roundNum">1</span>/5 轮</div>
-      <div class="lingshi-bar-fixed" id="lingshiBarFixed">💎 <strong id="fixedLingshi">3000</strong> 灵石</div>
+      <div class="lingshi-bar-fixed" id="lingshiBarFixed"><span style="opacity:0.6;font-size:0.75rem;">持有灵石</span> 💎 <strong id="fixedLingshi">3000</strong></div>
     </div>
 
     <div class="round-progress" id="roundProgress"></div>
