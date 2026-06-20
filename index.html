@@ -108,7 +108,7 @@ body {
 .base-price-badge { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; background:rgba(200,168,76,0.15); border:1px solid var(--gold); border-radius:12px; font-size:0.85rem; color:var(--gold); font-weight:bold; }
 .item-count-badge { display:inline-flex; align-items:center; gap:3px; padding:2px 8px; background:rgba(107,142,63,0.12); border:1px solid var(--jade); border-radius:10px; font-size:0.75rem; color:var(--jade); }
 .warehouse-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(70px,1fr)); gap:8px; max-width:560px; margin:0 auto; }
-.warehouse-cell { aspect-ratio:1; border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:0.75rem; position:relative; border:2px solid rgba(43,43,43,0.15); transition:all 0.4s; cursor:default; }
+.warehouse-cell { aspect-ratio:1; border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:0.7rem; position:relative; border:1.5px solid rgba(43,43,43,0.15); transition:all 0.4s; cursor:default; padding:2px; }
 .warehouse-cell.unknown { background:rgba(43,43,43,0.08); color:rgba(43,43,43,0.3); }
 .warehouse-cell.unknown::after { content:'?'; font-size:1.4rem; opacity:0.4; }
 .warehouse-cell.revealed { animation:reveal-pop 0.5s ease-out; }
@@ -118,7 +118,7 @@ body {
 .warehouse-cell.q-purple { background:rgba(155,89,182,0.2); border-color:var(--q-purple); }
 .warehouse-cell.q-gold { background:rgba(241,196,15,0.2); border-color:var(--q-gold); box-shadow:0 0 8px rgba(241,196,15,0.3); }
 .warehouse-cell.q-red { background:rgba(231,76,60,0.2); border-color:var(--q-red); box-shadow:0 0 12px rgba(231,76,60,0.4); }
-.warehouse-cell .cell-icon { font-size:1.3rem; }
+.warehouse-cell .cell-icon { font-size:0.9rem; line-height:1; }
 .warehouse-cell .cell-name { font-size:0.75rem; text-align:center; padding:0 2px; line-height:1.2; }
 .warehouse-cell .cell-value { font-size:0.75rem; color:var(--gold); }
 
@@ -233,7 +233,7 @@ body {
   .warehouse-cell .cell-name { font-size:0.65rem !important; }
   .warehouse-cell .cell-value { font-size:0.6rem !important; }
   /* 线索区折叠 */
-  .clues-area { max-height:100px !important; }
+  .clues-area { max-height:120px !important; overflow-y:auto; }
   .clue-item { font-size:0.75rem !important; padding:3px 6px !important; }
   /* 出价区紧凑 */
   .bid-info { gap:4px !important; }
@@ -274,10 +274,8 @@ body {
   .bid-info-item { flex:1 1 30%; min-width:0; }
   .bid-info-item .label { font-size:0.6rem !important; }
   /* 线索区可点击展开 */
-  .clues-area { max-height:60px !important; overflow:hidden; position:relative; }
-  .clues-area.expanded { max-height:200px !important; overflow-y:auto; }
-  .clues-area::after { content:'点击展开全部'; position:absolute; bottom:0; left:0; right:0; text-align:center; background:linear-gradient(transparent,var(--paper)); padding:8px; font-size:0.7rem; color:var(--vermilion); }
-  .clues-area.expanded::after { display:none; }
+  /* 线索区始终显示，不折叠 */
+  .clues-area::after { display:none !important; }
   /* 出价建议按钮横向滚动 */
   .bid-suggestions { display:flex; overflow-x:auto; flex-wrap:nowrap !important; padding-bottom:4px; }
   .bid-suggestions button { flex-shrink:0; }
@@ -507,6 +505,10 @@ body {
 /* 入局按钮脉冲 */
 @keyframes btnPulse { 0%,100% { box-shadow:0 2px 8px rgba(199,62,29,0.3); } 50% { box-shadow:0 4px 16px rgba(199,62,29,0.5); } }
 .start-btn { animation:btnPulse 2s ease-in-out infinite; }
+
+/* 固定灵石栏（始终显示，不随侧边栏折叠） */
+.lingshi-bar-fixed { display:inline-block; padding:3px 12px; background:linear-gradient(135deg,rgba(200,168,76,0.15),rgba(200,168,76,0.05)); border:1px solid var(--gold); border-radius:16px; font-size:0.85rem; color:var(--ink-deep); margin-top:4px; }
+.lingshi-bar-fixed strong { color:var(--gold); font-size:1rem; }
 </style>
 </head>
 <body>
@@ -569,6 +571,7 @@ body {
       <h1>天道拍卖行</h1>
       <span class="tier-badge" id="tierBadge"></span>
       <div class="subtitle">第 <span id="itemNum">1</span> 个仓库 · 当前第 <span id="roundNum">1</span>/5 轮</div>
+      <div class="lingshi-bar-fixed" id="lingshiBarFixed">💎 <strong id="fixedLingshi">3000</strong> 灵石</div>
     </div>
 
     <div class="round-progress" id="roundProgress"></div>
@@ -2193,12 +2196,6 @@ function renderClues() {
   list.innerHTML = G.allClues.map((c, i) =>
     `<div class="clue-item${i === G.allClues.length - 1 ? ' clue-item-new' : ''}"><span class="clue-round">[第${c.round}轮]</span>${c.content}</div>`
   ).join('');
-// 移动端点击展开线索
-const cluesArea = document.getElementById('cluesArea') || document.querySelector('.clues-area');
-if (cluesArea && !cluesArea._clickBound) {
-  cluesArea._clickBound = true;
-  cluesArea.addEventListener('click', function() { this.classList.toggle('expanded'); });
-}
 }
 
 // ============================================================
@@ -3672,9 +3669,13 @@ function repayDebt() {
 function updatePlayerUI() {
   const oldLingshi = window._lastLingshi || player.lingshi;
   document.getElementById('resLingshi').textContent = player.lingshi;
+  // 同步更新固定灵石栏
+  const fixedEl = document.getElementById('fixedLingshi');
+  if (fixedEl) fixedEl.textContent = player.lingshi;
   if (oldLingshi !== player.lingshi) {
     const el = document.getElementById('resLingshi');
     if (el) { el.classList.add('lingshi-change'); setTimeout(() => el.classList.remove('lingshi-change'), 500); }
+    if (fixedEl) { fixedEl.classList.add('lingshi-change'); setTimeout(() => fixedEl.classList.remove('lingshi-change'), 500); }
   }
   window._lastLingshi = player.lingshi;
   document.getElementById('resShouyuan').textContent = player.shouyuan;
