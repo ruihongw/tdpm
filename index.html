@@ -579,8 +579,7 @@ body {
     <div class="round-progress" id="roundProgress"></div>
 
     <div class="kill-price-banner" id="killPriceBanner">
-      <div class="kill-text">⚡ 本轮秒杀阈值</div>
-      <div class="kill-threshold" id="killThreshold"></div>
+      <div class="kill-text" id="killThreshold">⚡ 本轮秒杀阈值</div>
     </div>
 
     <!-- 仓库展示区 -->
@@ -1603,6 +1602,19 @@ function generateWarehouse(tierName) {
 
 // ============================================================
 //  线索生成（针对仓库集，逐轮随机揭示）
+// ============================================================
+
+// 线索文本高亮辅助函数
+function hlNum(n) { return `<strong style="color:var(--gold);">${n}</strong>`; }
+function hlVal(n) { return `<strong style="color:var(--gold);">${n}灵石</strong>`; }
+function hlQuality(name) {
+  const q = QUALITIES.find(q => q.name === name);
+  if (!q) return name;
+  const colorVar = { 'q-white':'#d8d8d8','q-green':'#5dbb63','q-blue':'#4a90d9','q-purple':'#9b59b6','q-gold':'#f1c40f','q-red':'#e74c3c' };
+  const color = colorVar[q.color] || 'inherit';
+  return `<strong style="color:${color};">${name}</strong>`;
+}
+function hlName(name) { return `<strong style="color:var(--vermilion);">${name}</strong>`; }
 //  致敬竞拍之王：每轮从线索池中随机抽取1-2条，种类丰富
 // ============================================================
 function generateWarehouseClues(warehouse) {
@@ -1633,40 +1645,40 @@ function generateWarehouseClues(warehouse) {
   const cluePool = [
     // 1. 藏品总数 + 品质分布
     () => {
-      const qParts = QUALITIES.filter(q=>qualityCount[q.key]>0).map(q=>`${qualityCount[q.key]}件${q.name}`).join('、');
+      const qParts = QUALITIES.filter(q=>qualityCount[q.key]>0).map(q=>`${hlNum(qualityCount[q.key])}件${hlQuality(q.name)}`).join('、');
       return { type:'count_quality',
-        content:`仓库共${warehouse.itemCount}件藏品，品质分布：${qParts}`,
+        content:`仓库共${hlNum(warehouse.itemCount)}件藏品，品质分布：${qParts}`,
         data:{ count:warehouse.itemCount, qualityCount } };
     },
     // 2. 藏品种类分布
     () => {
-      const tParts = Object.entries(typeCount).map(([t,c])=>`${c}件${t}`).join('、');
+      const tParts = Object.entries(typeCount).map(([t,c])=>`${hlNum(c)}件${t}`).join('、');
       return { type:'types', content:`藏品种类：${tParts}`, data:{ typeCount } };
     },
     // 3. 珍品名称（蓝品以上）
     () => {
       if (notableItems.length === 0) return { type:'notable_names', content:`仓库内多为凡品良品，未见珍品`, data:{ notableItemIds:[] } };
       return { type:'notable_names',
-        content:`探得珍品：${notableItems.map(i=>i.name).join('、')}`,
+        content:`探得珍品：${notableItems.map(i=>hlName(i.name)).join('、')}`,
         data:{ notableItemIds:notableItems.map(i=>i.id) } };
     },
     // 4. 仓库总价值区间
     () => {
       const vrMin = Math.floor(warehouse.totalValue*0.7);
       const vrMax = Math.floor(warehouse.totalValue*1.3);
-      return { type:'value_range', content:`仓库总价值估算：约${vrMin}～${vrMax}灵石`, data:{ min:vrMin, max:vrMax } };
+      return { type:'value_range', content:`仓库总价值估算：约${hlNum(vrMin)}～${hlNum(vrMax)}灵石`, data:{ min:vrMin, max:vrMax } };
     },
     // 5. 最贵藏品
     () => {
-      return { type:'max_item', content:`最贵藏品价值约${maxVal}灵石（${maxItem.qualityName}）`, data:{ maxVal, maxItemId:maxItem.id } };
+      return { type:'max_item', content:`最贵藏品价值约${hlVal(maxVal)}（${hlQuality(maxItem.qualityName)}）`, data:{ maxVal, maxItemId:maxItem.id } };
     },
     // 6. 最廉藏品
     () => {
-      return { type:'min_item', content:`最廉藏品价值约${minVal}灵石（${minItem.qualityName}）`, data:{ minVal, minItemId:minItem.id } };
+      return { type:'min_item', content:`最廉藏品价值约${hlVal(minVal)}（${hlQuality(minItem.qualityName)}）`, data:{ minVal, minItemId:minItem.id } };
     },
     // 7. 藏品平均价值
     () => {
-      return { type:'avg_value', content:`藏品平均价值约${avgVal}灵石`, data:{ avgVal } };
+      return { type:'avg_value', content:`藏品平均价值约${hlVal(avgVal)}`, data:{ avgVal } };
     },
     // 8. 年代分布
     () => {
@@ -1678,7 +1690,7 @@ function generateWarehouseClues(warehouse) {
       const idx = Math.floor(Math.random() * items.length);
       const item = items[idx];
       return { type:'reveal_one',
-        content:`天机窥探：第${idx+1}件为${item.qualityName}·${item.name}（约${item.value}灵石）`,
+        content:`天机窥探：第${hlNum(idx+1)}件为${hlQuality(item.qualityName)}·${hlName(item.name)}（约${hlVal(item.value)}）`,
         data:{ revealIds:[item.id] } };
     },
     // 10. 随机揭示2件藏品的品质（不揭示名称）
@@ -1687,7 +1699,7 @@ function generateWarehouseClues(warehouse) {
       const picked = shuffled.slice(0, Math.min(2, shuffled.length));
       const parts = picked.map((item, i) => {
         const idx = items.indexOf(item);
-        return `第${idx+1}件为${item.qualityName}`;
+        return `第${hlNum(idx+1)}件为${hlQuality(item.qualityName)}`;
       }).join('，');
       return { type:'reveal_quality',
         content:`天机探查：${parts}`,
@@ -1696,33 +1708,33 @@ function generateWarehouseClues(warehouse) {
     // 11. 是否存在传说级藏品
     () => {
       if (legendaryItems.length === 0) return { type:'legendary_check', content:`天机感应：仓库内未见传说级藏品`, data:{ hasLegendary:false } };
-      return { type:'legendary_check', content:`天机感应：仓库内存在${legendaryItems.length}件传说级藏品！`, data:{ hasLegendary:true, count:legendaryItems.length } };
+      return { type:'legendary_check', content:`天机感应：仓库内存在${hlNum(legendaryItems.length)}件${hlQuality('传说')}级藏品！`, data:{ hasLegendary:true, count:legendaryItems.length } };
     },
     // 12. 史诗级藏品数量
     () => {
       if (epicItems.length === 0) return null;
-      return { type:'epic_check', content:`探得${epicItems.length}件史诗级藏品`, data:{ epicCount:epicItems.length } };
+      return { type:'epic_check', content:`探得${hlNum(epicItems.length)}件${hlQuality('史诗')}级藏品`, data:{ epicCount:epicItems.length } };
     },
     // 13. 稀有以上藏品数量
     () => {
       if (rarePlusItems.length === 0) return { type:'rare_count', content:`仓库内无稀有以上藏品`, data:{ rareCount:0 } };
-      return { type:'rare_count', content:`稀有以上藏品共${rarePlusItems.length}件`, data:{ rareCount:rarePlusItems.length } };
+      return { type:'rare_count', content:`${hlQuality('稀有')}以上藏品共${hlNum(rarePlusItems.length)}件`, data:{ rareCount:rarePlusItems.length } };
     },
     // 14. 藏品价值中位数
     () => {
-      return { type:'median_value', content:`藏品价值中位数约${medianVal}灵石`, data:{ medianVal } };
+      return { type:'median_value', content:`藏品价值中位数约${hlVal(medianVal)}`, data:{ medianVal } };
     },
     // 15. 随机某品质的具体数量
     () => {
       const available = QUALITIES.filter(q => qualityCount[q.key] > 0);
       const q = available[Math.floor(Math.random() * available.length)];
-      return { type:'quality_count', content:`${q.name}藏品有${qualityCount[q.key]}件`, data:{ quality:q.key, count:qualityCount[q.key] } };
+      return { type:'quality_count', content:`${hlQuality(q.name)}藏品有${hlNum(qualityCount[q.key])}件`, data:{ quality:q.key, count:qualityCount[q.key] } };
     },
     // 16. 随机某类型的具体数量
     () => {
       const types = Object.keys(typeCount);
       const t = types[Math.floor(Math.random() * types.length)];
-      return { type:'type_count', content:`${t}类藏品有${typeCount[t]}件`, data:{ type:t, count:typeCount[t] } };
+      return { type:'type_count', content:`${t}类藏品有${hlNum(typeCount[t])}件`, data:{ type:t, count:typeCount[t] } };
     },
     // 17. 总价值模糊提示（量级）
     () => {
@@ -1732,14 +1744,14 @@ function generateWarehouseClues(warehouse) {
       else if (warehouse.totalValue < 20000) level = '万余灵石级别';
       else if (warehouse.totalValue < 50000) level = '数万灵石级别';
       else level = '十万灵石以上';
-      return { type:'value_level', content:`仓库总价值量级：${level}`, data:{ level } };
+      return { type:'value_level', content:`仓库总价值量级：${hlNum(level)}`, data:{ level } };
     },
     // 18. 随机揭示某件藏品是否为某品质
     () => {
       const idx = Math.floor(Math.random() * items.length);
       const item = items[idx];
       return { type:'item_quality_hint',
-        content:`第${idx+1}件藏品散发着${item.qualityName}的光芒`,
+        content:`第${hlNum(idx+1)}件藏品散发着${hlQuality(item.qualityName)}的光芒`,
         data:{ itemId:item.id, quality:item.quality } };
     },
   ];
@@ -1928,7 +1940,7 @@ function startItem() {
 
   // 渲染仓库初始状态（全部未知）
   document.getElementById('warehouseTitle').innerHTML = `${G.currentWarehouse.name} <span class="item-count-badge">📦 ${G.currentWarehouse.itemCount}件</span>`;
-  document.getElementById('warehouseDesc').textContent = `此仓库来历神秘，内含${G.currentWarehouse.itemCount}件藏品，需逐轮探查方知全貌`;
+  document.getElementById('warehouseDesc').textContent = `内含${G.currentWarehouse.itemCount}件藏品`;
   document.getElementById('basePrice').textContent = '💰 ' + G.currentWarehouse.basePrice;
   document.getElementById('itemNum').textContent = G.itemNum;
   document.getElementById('bidHint').textContent = '--';
@@ -2021,9 +2033,13 @@ function advanceRound() {
   if (player.shenshi >= 120 && Math.random() < 0.3 && G.currentRound < TOTAL_ROUNDS) {
     const hiddenItems = G.currentWarehouse.items.filter(item => !item.revealed);
     if (hiddenItems.length > 0) {
-      const target = hiddenItems[Math.floor(Math.random() * hiddenItems.length)];
-      target.revealed = true;
-      announce(`天道使者：「神识通明！额外感应到一件${target.qualityName}藏品——${target.name}。」`);
+      const maxReveal = Math.floor(G.currentWarehouse.items.length * 0.5);
+      const currentRevealed = G.currentWarehouse.items.filter(i => i.revealed).length;
+      if (currentRevealed < maxReveal) {
+        const target = hiddenItems[Math.floor(Math.random() * hiddenItems.length)];
+        target.revealed = true;
+        announce(`天道使者：「神识通明！额外感应到一件${target.qualityName}藏品——${target.name}。」`);
+      }
     }
   }
 
@@ -2032,9 +2048,13 @@ function advanceRound() {
   if (realmBonus.extraClueChance > 0 && Math.random() < realmBonus.extraClueChance && G.currentRound < TOTAL_ROUNDS) {
     const hiddenItems = G.currentWarehouse.items.filter(item => !item.revealed);
     if (hiddenItems.length > 0) {
-      const target = hiddenItems[Math.floor(Math.random() * hiddenItems.length)];
-      target.revealed = true;
-      announce(`天道使者：「元婴出窍！额外感应到一件${target.qualityName}藏品——${target.name}。」`);
+      const maxReveal = Math.floor(G.currentWarehouse.items.length * 0.5);
+      const currentRevealed = G.currentWarehouse.items.filter(i => i.revealed).length;
+      if (currentRevealed < maxReveal) {
+        const target = hiddenItems[Math.floor(Math.random() * hiddenItems.length)];
+        target.revealed = true;
+        announce(`天道使者：「元婴出窍！额外感应到一件${target.qualityName}藏品——${target.name}。」`);
+      }
     }
   }
 
@@ -2051,9 +2071,9 @@ function advanceRound() {
     if (killInsight && G.lastRoundBids.length > 0) {
       const lastMax = Math.max(...G.lastRoundBids.map(b=>b.amount));
       const killAmount = Math.floor(lastMax * (1 + threshold) * (0.95 + Math.random()*0.1));
-      document.getElementById('killThreshold').textContent = `秒杀阈值：出价≥${killAmount}灵石（第二名${lastMax}×${(1+threshold).toFixed(1)}）即可终结`;
+      document.getElementById('killThreshold').textContent = `⚡ 本轮秒杀阈值：出价≥${killAmount}灵石`;
     } else {
-      document.getElementById('killThreshold').textContent = `出价高于第二名 ${Math.round(threshold*100)}% 即可秒杀终结`;
+      document.getElementById('killThreshold').textContent = `⚡ 本轮秒杀阈值：高于第二名${Math.round(threshold*100)}%`;
     }
   } else { banner.classList.remove('show'); }
 
@@ -2106,6 +2126,11 @@ function advanceRound() {
 
 // 根据线索揭示仓库内容（支持所有线索类型）
 function applyClueReveals(clues) {
+  // 计算当前已揭示完整信息的藏品数量
+  const alreadyRevealed = G.currentWarehouse.items.filter(i => i.revealed).length;
+  const maxRevealCount = Math.floor(G.currentWarehouse.items.length * 0.5); // 最多揭示50%
+  let revealCount = alreadyRevealed;
+
   for (const clue of clues) {
     switch (clue.type) {
       case 'count_quality':
@@ -2116,7 +2141,7 @@ function applyClueReveals(clues) {
         // 揭示珍品名称
         if (clue.data.notableItemIds) {
           G.currentWarehouse.items.forEach(item => {
-            if (clue.data.notableItemIds.includes(item.id)) { item.revealed = true; }
+            if (clue.data.notableItemIds.includes(item.id) && revealCount < maxRevealCount) { item.revealed = true; revealCount++; }
           });
         }
         break;
@@ -2124,7 +2149,7 @@ function applyClueReveals(clues) {
         // 随机揭示1件藏品的完整信息
         if (clue.data.revealIds) {
           G.currentWarehouse.items.forEach(item => {
-            if (clue.data.revealIds.includes(item.id)) { item.revealed = true; }
+            if (clue.data.revealIds.includes(item.id) && revealCount < maxRevealCount) { item.revealed = true; revealCount++; }
           });
         }
         break;
@@ -2345,6 +2370,13 @@ function renderBidSuggestions() {
   const gentleBid = Math.floor(basePrice * 1.5);
   if (gentleBid <= player.lingshi) {
     suggestions.push({ label:'温和', value:gentleBid, tip:'底价×1.5' });
+  }
+
+  // 建议：维持上次出价
+  if (myLastBid) {
+    if (myLastBid.amount <= player.lingshi && myLastBid.amount >= basePrice) {
+      suggestions.push({ label:'维持', value:myLastBid.amount, tip:'上次出价' });
+    }
   }
 
   // 建议3：上轮出价+10%（加码）
