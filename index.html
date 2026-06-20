@@ -2,7 +2,14 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="天道拍卖行">
+<meta name="theme-color" content="#c73e1d">
+<meta name="description" content="仙侠风格仓库集竞拍游戏">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%23c73e1d'/%3E%3Ctext x='256' y='340' font-size='280' text-anchor='middle' fill='%23c8a84c'%3E%E2%98%B8%EF%B8%8F%3C/text%3E%3C/svg%3E">
 <title>天道拍卖行 · 仓库集竞拍（仙侠版）</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap');
@@ -204,6 +211,13 @@ body {
 /* P2-4: 移动端播报位置修复，避免被底部操作区遮挡 */
 @media (max-width:768px) {
   .announcement-area { bottom: auto !important; top: 10px !important; }
+  /* iPhone安全区域适配 */
+  body { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+  .start-overlay, .shop-overlay, .cultivation-overlay { padding-top: env(safe-area-inset-top); }
+  .bid-controls { padding-bottom: calc(8px + env(safe-area-inset-bottom)); }
+  /* 防止双击缩放 */
+  * { -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+  input { -webkit-user-select: text; }
 }
 
 /* 东山再起 */
@@ -3737,6 +3751,13 @@ function updateStartDisplay() {
   el.innerHTML += `<br>${info.realm.icon} 境界：<strong style="color:var(--vermilion);">${info.realm.name}${info.subLevel}层</strong> | 修为：${meta.xiuwei + pending}${pending>0?' <span style="color:var(--jade);font-size:0.75rem;">(+'+pending+'待结算)</span>':''}`;
 }
 updateStartDisplay();
+
+// PWA Service Worker 注册
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
 </script>
 </body>
 </html>

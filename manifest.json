@@ -1,0 +1,18 @@
+{
+  "name": "天道拍卖行 · 仙侠仓库竞拍",
+  "short_name": "天道拍卖行",
+  "description": "仙侠风格仓库集竞拍游戏，打坐修炼、竞拍藏品、突破境界",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f5f0e8",
+  "theme_color": "#c73e1d",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%23c73e1d'/%3E%3Ctext x='256' y='340' font-size='280' text-anchor='middle' fill='%23c8a84c'%3E%E2%98%B8%EF%B8%8F%3C/text%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
