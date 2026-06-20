@@ -1,0 +1,3742 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>天道拍卖行 · 仓库集竞拍（仙侠版）</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&display=swap');
+
+:root {
+  --ink-black:#2b2b2b; --ink-deep:#1a1a1a;
+  --paper:#f5ecd7; --paper-dark:#e8dcc0;
+  --vermilion:#c0392b; --gold:#c9a84c; --jade:#5d8a66;
+  --spirit-blue:#4a6fa5; --shadow:rgba(0,0,0,0.3); --seal-red:#b22222;
+  --q-white:#d8d8d8; --q-green:#5dbb63; --q-blue:#4a90d9;
+  --q-purple:#9b59b6; --q-gold:#f1c40f; --q-red:#e74c3c;
+  --tier-fanchen:#5d8a66; --tier-lingbao:#c9a84c; --tier-tianji:#c0392b;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family:'ZCOOL XiaoWei','楷体',KaiTi,'STKaiti',serif;
+  background:var(--paper);
+  background-image:
+    radial-gradient(ellipse at 20% 30%,rgba(200,168,76,0.08) 0%,transparent 50%),
+    radial-gradient(ellipse at 80% 70%,rgba(192,57,43,0.05) 0%,transparent 50%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  color:var(--ink-black); min-height:100vh; overflow-x:hidden; user-select:none;
+}
+@keyframes screen-shake { 0%,100%{transform:translate(0,0) rotate(0);} 10%{transform:translate(-4px,2px) rotate(-0.5deg);} 20%{transform:translate(4px,-2px) rotate(0.5deg);} 30%{transform:translate(-3px,-3px) rotate(-0.3deg);} 40%{transform:translate(3px,3px) rotate(0.3deg);} 50%{transform:translate(-2px,1px) rotate(0);} 60%{transform:translate(2px,-1px) rotate(0);} 70%{transform:translate(-1px,2px) rotate(0);} 80%{transform:translate(1px,-2px) rotate(0);} 90%{transform:translate(0,1px) rotate(0);} }
+.shaking { animation:screen-shake 0.6s ease-in-out; }
+@keyframes killFlash { 0% { background:rgba(199,62,29,0); } 20% { background:rgba(199,62,29,0.3); } 100% { background:rgba(199,62,29,0); } }
+.kill-flash { animation:killFlash 0.6s ease; }
+@keyframes zhouhuo-flash { 0%,100%{filter:none;} 50%{filter:sepia(0.3) hue-rotate(-20deg) saturate(1.5);} }
+.zhouhuo-active { animation:zhouhuo-flash 2s ease-in-out infinite; }
+@keyframes flashFade { 0%{opacity:1;} 100%{opacity:0;} }
+@keyframes fade-in { to{opacity:1;} }
+@keyframes glow-gold { 0%,100%{box-shadow:0 0 5px rgba(200,168,76,0.3);} 50%{box-shadow:0 0 20px rgba(200,168,76,0.6);} }
+@keyframes reveal-pop { 0%{transform:scale(0) rotate(180deg);opacity:0;} 60%{transform:scale(1.2) rotate(0deg);} 100%{transform:scale(1) rotate(0deg);opacity:1;} }
+
+/* 开始遮罩 */
+.start-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(245,236,215,0.97); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:200; transition:opacity 0.6s; }
+.start-overlay.hidden { opacity:0; pointer-events:none; }
+.start-overlay h2 { font-family:'Ma Shan Zheng',serif; font-size:3.5rem; color:var(--ink-deep); letter-spacing:0.3em; margin-bottom:16px; text-shadow:2px 2px 8px var(--shadow); }
+.start-overlay p { font-size:1.05rem; color:var(--ink-black); opacity:0.7; max-width:560px; text-align:center; line-height:2; margin-bottom:30px; }
+.start-btn { padding:14px 48px; font-size:1.4rem; font-family:'Ma Shan Zheng',serif; background:linear-gradient(135deg,var(--vermilion),#8e1c1c); color:var(--paper); border:none; border-radius:8px; cursor:pointer; letter-spacing:0.3em; box-shadow:0 4px 20px rgba(192,57,43,0.4); transition:all 0.3s; }
+.start-btn:hover { transform:translateY(-2px); box-shadow:0 8px 30px rgba(192,57,43,0.6); }
+
+/* 拍卖场选择 */
+.tier-select-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(245,236,215,0.97); display:none; flex-direction:column; align-items:center; justify-content:center; z-index:180; }
+.tier-select-overlay.show { display:flex; }
+.tier-select-overlay h2 { font-family:'Ma Shan Zheng',serif; font-size:2.2rem; color:var(--ink-deep); letter-spacing:0.2em; margin-bottom:8px; }
+.tier-select-overlay .tier-subtitle { font-size:0.95rem; opacity:0.6; margin-bottom:30px; }
+.tier-cards { display:flex; gap:20px; flex-wrap:wrap; justify-content:center; }
+.tier-card { width:240px; padding:24px 20px; border-radius:12px; cursor:pointer; transition:all 0.3s; text-align:center; position:relative; overflow:hidden; border:2px solid transparent; }
+.tier-card:hover { transform:translateY(-6px); }
+.tier-card.fanchen { background:linear-gradient(135deg,rgba(93,138,102,0.15),rgba(93,138,102,0.05)); border-color:var(--tier-fanchen); }
+.tier-card.lingbao { background:linear-gradient(135deg,rgba(200,168,76,0.15),rgba(200,168,76,0.05)); border-color:var(--tier-lingbao); animation:glow-gold 2s ease-in-out infinite; }
+.tier-card.tianji { background:linear-gradient(135deg,rgba(192,57,43,0.15),rgba(192,57,43,0.05)); border-color:var(--tier-tianji); }
+.tier-card .tier-icon { font-size:3rem; margin-bottom:8px; }
+.tier-card .tier-name { font-family:'Ma Shan Zheng',serif; font-size:1.6rem; margin-bottom:6px; }
+.tier-card.fanchen .tier-name { color:var(--tier-fanchen); }
+.tier-card.lingbao .tier-name { color:var(--tier-lingbao); }
+.tier-card.tianji .tier-name { color:var(--tier-tianji); }
+.tier-card .tier-fee { font-size:1.1rem; color:var(--vermilion); margin:8px 0; }
+.tier-card .tier-desc { font-size:0.8rem; opacity:0.6; line-height:1.6; }
+.tier-card .tier-range { font-size:0.85rem; margin-top:6px; color:var(--gold); }
+.tier-card.locked { opacity:0.4; cursor:not-allowed; }
+.tier-card.locked::after { content:'灵石不足'; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.6); color:var(--paper); padding:4px 12px; border-radius:4px; font-size:0.85rem; }
+
+/* 主布局 */
+.main-container { max-width:1200px; margin:0 auto; padding:10px 16px 40px; display:grid; grid-template-columns:1fr 340px; gap:16px; }
+@media (max-width:768px) { .main-container { grid-template-columns:1fr; } }
+
+/* 左侧拍卖台 */
+.auction-stage { background:linear-gradient(135deg,rgba(245,236,215,0.9),rgba(232,220,192,0.95)); border:1px solid rgba(43,43,43,0.15); border-radius:8px; padding:20px; box-shadow:0 4px 20px var(--shadow),inset 0 0 60px rgba(200,168,76,0.05); position:relative; min-height:500px; }
+.auction-stage::before,.auction-stage::after { content:''; position:absolute; width:100%; height:6px; left:0; background:linear-gradient(90deg,transparent,var(--gold),transparent); opacity:0.4; }
+.auction-stage::before { top:0; } .auction-stage::after { bottom:0; }
+
+.header { text-align:center; padding:10px; }
+.header h1 { font-family:'Ma Shan Zheng',serif; font-size:2.2rem; color:var(--ink-deep); letter-spacing:0.3em; text-shadow:2px 2px 4px var(--shadow); display:inline-block; }
+.header .subtitle { font-size:0.9rem; opacity:0.6; margin-top:4px; margin-bottom:4px; letter-spacing:0.15em; }
+.header .tier-badge { display:inline-block; padding:2px 10px; border-radius:12px; font-size:0.8rem; margin-left:8px; color:var(--paper); }
+.header .tier-badge.fanchen { background:var(--tier-fanchen); }
+.header .tier-badge.lingbao { background:var(--tier-lingbao); }
+.header .tier-badge.tianji { background:var(--tier-tianji); }
+
+/* 轮次进度 */
+.round-progress { display:flex; gap:4px; justify-content:center; margin:24px 0 8px; }
+.round-dot { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:bold; border:2px solid rgba(43,43,43,0.15); background:rgba(43,43,43,0.03); color:rgba(43,43,43,0.3); transition:all 0.3s; position:relative; }
+.round-dot.current { border-color:var(--vermilion); background:var(--vermilion); color:white; transform:scale(1.15); box-shadow:0 2px 8px rgba(199,62,29,0.3); }
+.round-dot.done { border-color:var(--jade); background:rgba(107,142,63,0.15); color:var(--jade); }
+.round-dot.kill { border-color:var(--vermilion); background:var(--vermilion); color:white; }
+.round-dot .kill-label { position:absolute; top:-18px; font-size:0.75rem; white-space:nowrap; color:var(--vermilion); opacity:0.7; }
+
+/* 仓库展示区 */
+.warehouse-area { margin:16px 0; padding:16px; background:rgba(43,43,43,0.04); border-radius:8px; border:1px solid rgba(43,43,43,0.1); }
+.warehouse-title { font-family:'Ma Shan Zheng',serif; font-size:1.3rem; color:var(--ink-deep); text-align:center; margin-bottom:4px; }
+.warehouse-desc { text-align:center; font-size:0.85rem; opacity:0.6; margin-bottom:12px; }
+.warehouse-header { border:1px solid rgba(200,168,76,0.3); border-radius:8px; padding:10px 14px; background:linear-gradient(135deg,rgba(200,168,76,0.06),rgba(200,168,76,0.02)); margin-bottom:8px; }
+.base-price-badge { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; background:rgba(200,168,76,0.15); border:1px solid var(--gold); border-radius:12px; font-size:0.85rem; color:var(--gold); font-weight:bold; }
+.item-count-badge { display:inline-flex; align-items:center; gap:3px; padding:2px 8px; background:rgba(107,142,63,0.12); border:1px solid var(--jade); border-radius:10px; font-size:0.75rem; color:var(--jade); }
+.warehouse-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(70px,1fr)); gap:8px; max-width:560px; margin:0 auto; }
+.warehouse-cell { aspect-ratio:1; border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:0.75rem; position:relative; border:2px solid rgba(43,43,43,0.15); transition:all 0.4s; cursor:default; }
+.warehouse-cell.unknown { background:rgba(43,43,43,0.08); color:rgba(43,43,43,0.3); }
+.warehouse-cell.unknown::after { content:'?'; font-size:1.4rem; opacity:0.4; }
+.warehouse-cell.revealed { animation:reveal-pop 0.5s ease-out; }
+.warehouse-cell.q-white { background:rgba(216,216,216,0.3); border-color:var(--q-white); }
+.warehouse-cell.q-green { background:rgba(93,187,99,0.2); border-color:var(--q-green); }
+.warehouse-cell.q-blue { background:rgba(74,144,217,0.2); border-color:var(--q-blue); }
+.warehouse-cell.q-purple { background:rgba(155,89,182,0.2); border-color:var(--q-purple); }
+.warehouse-cell.q-gold { background:rgba(241,196,15,0.2); border-color:var(--q-gold); box-shadow:0 0 8px rgba(241,196,15,0.3); }
+.warehouse-cell.q-red { background:rgba(231,76,60,0.2); border-color:var(--q-red); box-shadow:0 0 12px rgba(231,76,60,0.4); }
+.warehouse-cell .cell-icon { font-size:1.3rem; }
+.warehouse-cell .cell-name { font-size:0.75rem; text-align:center; padding:0 2px; line-height:1.2; }
+.warehouse-cell .cell-value { font-size:0.75rem; color:var(--gold); }
+
+/* 仓库统计 */
+.warehouse-stats { display:flex; justify-content:center; gap:12px; margin-top:12px; flex-wrap:wrap; }
+.stat-pill { padding:3px 10px; border-radius:12px; font-size:0.75rem; background:rgba(43,43,43,0.06); }
+.stat-pill .stat-q { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:3px; vertical-align:middle; }
+.stat-pill .q-white { background:var(--q-white); } .stat-pill .q-green { background:var(--q-green); }
+.stat-pill .q-blue { background:var(--q-blue); } .stat-pill .q-purple { background:var(--q-purple); }
+.stat-pill .q-gold { background:var(--q-gold); } .stat-pill .q-red { background:var(--q-red); }
+
+/* 线索区 */
+.clues-area { margin:12px 0; padding:12px; background:rgba(74,111,165,0.06); border-radius:8px; border:1px dashed rgba(74,111,165,0.2); max-height:150px; overflow-y:auto; }
+.clues-area .clues-title { font-size:0.85rem; color:var(--spirit-blue); margin-bottom:6px; }
+.clue-item { padding:4px 10px; margin:4px 0; background:rgba(74,111,165,0.08); border-radius:4px; font-size:0.85rem; opacity:0; animation:fade-in 0.5s forwards; border-left:3px solid var(--spirit-blue); }
+.clue-item .clue-round { color:var(--gold); margin-right:6px; font-size:0.75rem; }
+
+/* 秒杀价提示 */
+.kill-price-banner { display:none; margin:10px 0; padding:10px; text-align:center; background:linear-gradient(135deg,rgba(192,57,43,0.15),rgba(192,57,43,0.05)); border:1px solid var(--vermilion); border-radius:8px; }
+.kill-price-banner.show { display:block; }
+.kill-price-banner .kill-text { font-size:0.95rem; color:var(--vermilion); font-weight:bold; }
+.kill-price-banner .kill-threshold { font-size:1.3rem; color:var(--vermilion); font-family:'Ma Shan Zheng',serif; }
+
+/* 竞价信息 */
+.bid-info { display:flex; justify-content:space-around; align-items:center; padding:14px; margin:12px 0; background:rgba(43,43,43,0.04); border-radius:8px; border:1px solid rgba(43,43,43,0.08); }
+.bid-info-item { text-align:center; }
+.bid-info-item .label { font-size:0.8rem; opacity:0.6; margin-bottom:4px; }
+.bid-info-item .value { font-size:1.4rem; font-weight:bold; color:var(--ink-deep); font-family:'Ma Shan Zheng',serif; }
+
+/* 出价控制 */
+.bid-controls { display:flex; gap:10px; align-items:center; justify-content:center; flex-wrap:wrap; padding:10px 0; }
+.bid-input { width:120px; padding:8px 12px; border:1px solid var(--gold); border-radius:6px; background:rgba(255,255,255,0.6); font-family:'ZCOOL XiaoWei',serif; font-size:1.1rem; color:var(--ink-deep); text-align:center; outline:none; transition:all 0.2s; }
+.bid-input:focus { border-color:var(--gold); box-shadow:0 0 0 3px rgba(200,168,76,0.15); transform:scale(1.02); }
+.bid-input::placeholder { color:rgba(43,43,43,0.3); }
+.btn { padding:8px 20px; border:none; border-radius:6px; font-family:'ZCOOL XiaoWei',serif; font-size:1rem; cursor:pointer; transition:all 0.2s; letter-spacing:0.1em; }
+.btn:active { transform:scale(0.96); }
+.btn:disabled { opacity:0.4; cursor:not-allowed; }
+.btn-primary { background:linear-gradient(135deg,var(--vermilion),#a03020); color:var(--paper); border:none; box-shadow:0 2px 8px rgba(199,62,29,0.3); transition:all 0.2s; }
+.btn-primary:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 4px 12px rgba(199,62,29,0.4); }
+.btn-primary:disabled { opacity:0.4; cursor:not-allowed; }
+.btn-ghost { background:transparent; border:1px solid var(--ink-black); color:var(--ink-black); opacity:0.6; transition:all 0.2s; }
+.btn-ghost:hover:not(:disabled) { opacity:1; background:rgba(43,43,43,0.08); }
+.btn-comeback { background:linear-gradient(135deg,var(--jade),#3d6a46); color:var(--paper); }
+.overdraft-toggle { display:flex; align-items:center; gap:6px; font-size:0.85rem; color:var(--vermilion); cursor:pointer; }
+.overdraft-toggle input { width:16px; height:16px; cursor:pointer; }
+
+/* 竞拍记录 */
+.bid-log { max-height:120px; overflow-y:auto; margin-top:10px; padding:8px; background:rgba(43,43,43,0.04); border-radius:6px; font-size:0.8rem; }
+.bid-log::-webkit-scrollbar { width:4px; } .bid-log::-webkit-scrollbar-thumb { background:var(--gold); border-radius:2px; }
+.log-entry { padding:3px 0; border-bottom:1px dashed rgba(43,43,43,0.08); opacity:0; animation:fade-in 0.3s forwards; }
+.log-entry .log-time { color:var(--gold); margin-right:6px; }
+.log-entry .log-overdraft { color:var(--vermilion); font-weight:bold; }
+.log-entry .log-kill { color:var(--vermilion); font-weight:bold; }
+
+/* 侧边栏 */
+.sidebar { display:flex; flex-direction:column; gap:12px; }
+.player-panel,.npc-list,.collection-panel { background:linear-gradient(135deg,rgba(245,236,215,0.9),rgba(232,220,192,0.95)); border:1px solid rgba(43,43,43,0.15); border-radius:8px; padding:16px; box-shadow:0 2px 12px var(--shadow); }
+.panel-title { font-family:'Ma Shan Zheng',serif; font-size:1.15rem; color:var(--ink-deep); margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid rgba(43,43,43,0.1); display:flex; justify-content:space-between; align-items:center; }
+.player-name { color:var(--vermilion); }
+.resource-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.resource-item { display:flex; align-items:center; gap:6px; padding:6px 10px; background:rgba(43,43,43,0.04); border-radius:6px; font-size:0.85rem; }
+.resource-item .res-icon { font-size:1.1rem; }
+.resource-item .res-value { font-weight:bold; color:var(--ink-deep); }
+.resource-item.warning .res-value { color:var(--vermilion); }
+.zhouhuo-badge { display:inline-block; padding:2px 8px; background:var(--seal-red); color:var(--paper); border-radius:10px; font-size:0.75rem; margin-left:4px; }
+.debt-badge { display:inline-block; padding:2px 8px; background:#e67e22; color:var(--paper); border-radius:10px; font-size:0.75rem; margin-left:4px; }
+
+.npc-card { display:flex; align-items:center; gap:8px; padding:8px 10px; margin-bottom:6px; border-radius:8px; background:rgba(43,43,43,0.03); font-size:0.85rem; border-left:3px solid transparent; transition:all 0.2s; cursor:default; }
+.npc-card:hover { background:rgba(200,168,76,0.08); transform:translateX(2px); }
+.npc-card.zhouhuo { background:rgba(192,57,43,0.1); border-left-color:var(--vermilion); }
+.npc-card.bid-submitted { border-left-color:var(--gold); background:rgba(200,168,76,0.06); }
+.npc-avatar { font-size:1.3rem; width:32px; height:32px; display:flex; align-items:center; justify-content:center; border-radius:50%; background:rgba(200,168,76,0.12); flex-shrink:0; }
+.npc-info { flex:1; min-width:0; }
+.npc-info .npc-name { font-weight:bold; font-size:0.85rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.npc-info .npc-sect { font-size:0.7rem; opacity:0.6; display:flex; align-items:center; gap:4px; }
+.npc-strat-badge { font-size:0.75rem; padding:1px 4px; border-radius:3px; font-weight:bold; white-space:nowrap; }
+.npc-lingshi { font-size:0.8rem; color:var(--gold); white-space:nowrap; }
+.npc-bid-status { font-size:0.75rem; opacity:0.5; }
+
+.collection-item { display:flex; align-items:center; gap:6px; padding:6px 8px; margin-bottom:4px; background:rgba(200,168,76,0.06); border-radius:4px; font-size:0.8rem; border-left:3px solid var(--gold); }
+.collection-item .coll-name { flex:1; }
+.collection-item .coll-value { color:var(--gold); font-size:0.75rem; }
+
+/* 天道使者播报 */
+.announcement-area { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); width:90%; max-width:700px; z-index:100; pointer-events:none; }
+.announcement-bubble { background:linear-gradient(135deg,rgba(26,26,26,0.92),rgba(43,43,43,0.92)); color:var(--paper); padding:12px 24px; border-radius:8px; border:1px solid var(--gold); font-size:1rem; text-align:center; box-shadow:0 4px 20px rgba(0,0,0,0.4); opacity:0; transform:translateY(20px); transition:all 0.4s ease; letter-spacing:0.05em; }
+.announcement-bubble.show { opacity:1; transform:translateY(0); }
+.announcement-bubble .speaker { color:var(--gold); font-weight:bold; }
+.announce-bar { background:linear-gradient(90deg,rgba(200,168,76,0.08),rgba(200,168,76,0.02),rgba(200,168,76,0.08)); border-top:1px solid rgba(200,168,76,0.2); border-bottom:1px solid rgba(200,168,76,0.2); }
+.announce-bar.kill-announce { background:linear-gradient(90deg,rgba(199,62,29,0.15),rgba(199,62,29,0.05),rgba(199,62,29,0.15)); }
+/* P2-4: 移动端播报位置修复，避免被底部操作区遮挡 */
+@media (max-width:768px) {
+  .announcement-area { bottom: auto !important; top: 10px !important; }
+}
+
+/* 东山再起 */
+.comeback-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); align-items:center; justify-content:center; z-index:190; }
+.comeback-overlay.show { display:flex; }
+.comeback-panel { background:linear-gradient(135deg,var(--paper),var(--paper-dark)); border:2px solid var(--jade); border-radius:12px; padding:28px; max-width:480px; box-shadow:0 8px 40px rgba(0,0,0,0.4); }
+.comeback-panel h3 { font-family:'Ma Shan Zheng',serif; font-size:1.5rem; color:var(--jade); text-align:center; margin-bottom:8px; letter-spacing:0.2em; }
+.comeback-panel .comeback-desc { text-align:center; font-size:0.9rem; opacity:0.6; margin-bottom:16px; line-height:1.6; }
+.comeback-option { display:block; width:100%; padding:12px 16px; margin-bottom:8px; background:rgba(93,138,102,0.1); border:1px solid rgba(93,138,102,0.3); border-radius:8px; cursor:pointer; font-family:'ZCOOL XiaoWei',serif; font-size:0.95rem; transition:all 0.2s; text-align:left; color:var(--ink-deep); }
+.comeback-option:hover { background:rgba(93,138,102,0.2); border-color:var(--jade); }
+.comeback-option:disabled { opacity:0.4; cursor:not-allowed; }
+.comeback-option .co-title { font-weight:bold; font-size:1rem; }
+.comeback-option .co-desc { font-size:0.8rem; opacity:0.6; margin-top:2px; }
+.comeback-close { display:block; width:100%; margin-top:8px; padding:8px; background:transparent; border:1px solid rgba(43,43,43,0.2); color:rgba(43,43,43,0.5); border-radius:6px; cursor:pointer; font-family:'ZCOOL XiaoWei',serif; }
+.comeback-input-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index:195; }
+.comeback-input-overlay.show { display:flex; }
+.comeback-input-box { background:var(--paper); border:2px solid var(--jade); border-radius:12px; padding:24px; text-align:center; min-width:300px; }
+.comeback-input-box h4 { font-family:'Ma Shan Zheng',serif; font-size:1.2rem; margin-bottom:12px; color:var(--jade); }
+.comeback-input-box p { font-size:0.85rem; opacity:0.6; margin-bottom:12px; white-space:pre-line; }
+.comeback-input-box input { width:120px; padding:8px; font-size:1.2rem; text-align:center; border:1px solid var(--gold); border-radius:6px; font-family:'ZCOOL XiaoWei',serif; }
+.comeback-input-box .input-btns { margin-top:16px; display:flex; gap:8px; justify-content:center; }
+
+/* 结算弹窗 */
+.settlement-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index:180; }
+.settlement-overlay.show { display:flex; }
+.settlement-card { background:linear-gradient(135deg,var(--paper),var(--paper-dark)); border:2px solid var(--gold); border-radius:12px; padding:28px 40px; text-align:center; box-shadow:0 8px 40px rgba(0,0,0,0.4); max-width:480px; }
+.settlement-card h3 { font-family:'Ma Shan Zheng',serif; font-size:1.8rem; color:var(--vermilion); margin-bottom:12px; }
+.settlement-card .winner-name { font-size:1.3rem; color:var(--ink-deep); margin:8px 0; }
+.settlement-card .final-price { font-size:1.5rem; color:var(--gold); font-weight:bold; margin:8px 0; }
+.settlement-card .settle-profit { font-size:1rem; margin:8px 0; }
+.settlement-card .settle-profit.gain { color:var(--jade); }
+.settlement-card .settle-profit.loss { color:var(--vermilion); }
+.settlement-card .settle-desc { font-size:0.9rem; opacity:0.7; margin:12px 0 20px; line-height:1.8; }
+.settlement-card .warehouse-summary { font-size:0.8rem; margin:8px 0; padding:8px; background:rgba(43,43,43,0.04); border-radius:6px; line-height:1.6; }
+
+/* ===== 修仙动画系统 ===== */
+.cultivation-scene { position:relative; width:200px; height:200px; margin:0 auto 16px; }
+.cultivation-disc { position:absolute; bottom:20px; left:50%; transform:translateX(-50%); width:160px; height:30px; background:radial-gradient(ellipse,rgba(200,168,76,0.3),transparent 70%); border-radius:50%; }
+.cultivation-character { position:absolute; bottom:30px; left:50%; transform:translateX(-50%); font-size:3.5rem; animation:meditateFloat 3s ease-in-out infinite; filter:drop-shadow(0 4px 8px rgba(0,0,0,0.2)); }
+@keyframes meditateFloat { 0%,100% { transform:translateX(-50%) translateY(0); } 50% { transform:translateX(-50%) translateY(-8px); } }
+.cultivation-aura { position:absolute; bottom:30px; left:50%; transform:translateX(-50%); width:100px; height:100px; border-radius:50%; background:radial-gradient(circle,rgba(200,168,76,0.2),transparent 60%); animation:auraPulse 2s ease-in-out infinite; pointer-events:none; }
+@keyframes auraPulse { 0%,100% { opacity:0.4; transform:translateX(-50%) scale(1); } 50% { opacity:0.8; transform:translateX(-50%) scale(1.3); } }
+.cultivation-particle { position:absolute; width:6px; height:6px; border-radius:50%; background:var(--gold); opacity:0; animation:particleRise 2s ease-out infinite; }
+@keyframes particleRise { 0% { opacity:0; transform:translateY(0) scale(0.5); } 20% { opacity:1; } 100% { opacity:0; transform:translateY(-80px) scale(1.5); } }
+.cultivation-ring { position:absolute; bottom:35px; left:50%; transform:translateX(-50%); width:80px; height:80px; border:2px solid var(--gold); border-radius:50%; opacity:0; animation:ringExpand 3s ease-out infinite; }
+@keyframes ringExpand { 0% { opacity:0.6; transform:translateX(-50%) scale(0.5); } 100% { opacity:0; transform:translateX(-50%) scale(2); } }
+.cultivation-breakthrough { animation:breakthroughGlow 0.8s ease; }
+@keyframes breakthroughGlow { 0% { filter:drop-shadow(0 0 0 var(--gold)); } 50% { filter:drop-shadow(0 0 30px var(--gold)) brightness(1.5); } 100% { filter:drop-shadow(0 0 0 var(--gold)); } }
+/* 境界图标动画 */
+.realm-icon-big { font-size:3rem; animation:realmGlow 2s ease-in-out infinite; display:inline-block; }
+@keyframes realmGlow { 0%,100% { transform:scale(1); filter:drop-shadow(0 0 4px rgba(200,168,76,0.3)); } 50% { transform:scale(1.08); filter:drop-shadow(0 0 12px rgba(200,168,76,0.6)); } }
+/* 修为进度条流光 */
+.xiuwei-bar { position:relative; overflow:hidden; }
+.xiuwei-bar::after { content:''; position:absolute; top:0; left:-50%; width:50%; height:100%; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.4),transparent); animation:barShine 2s linear infinite; }
+@keyframes barShine { 0% { left:-50%; } 100% { left:150%; } }
+
+/* 成交确认弹窗 */
+.deal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); align-items:center; justify-content:center; z-index:230; }
+.deal-overlay.show { display:flex; animation:dealOverlayIn 0.3s ease; }
+@keyframes dealOverlayIn { from { opacity:0; } to { opacity:1; } }
+.deal-panel { position:relative; background:linear-gradient(135deg,var(--paper),var(--paper-dark)); border:3px solid var(--gold); border-radius:16px; padding:32px 48px; text-align:center; box-shadow:0 0 60px rgba(200,168,76,0.4), 0 8px 40px rgba(0,0,0,0.5); max-width:480px; width:90%; animation:dealPanelIn 0.5s cubic-bezier(0.34,1.56,0.64,1); overflow:hidden; }
+@keyframes dealPanelIn { from { opacity:0; transform:scale(0.7) translateY(30px); } to { opacity:1; transform:scale(1) translateY(0); } }
+.deal-glow { position:absolute; top:50%; left:50%; width:300px; height:300px; border-radius:50%; background:radial-gradient(circle,rgba(200,168,76,0.15),transparent 70%); transform:translate(-50%,-50%); animation:dealGlow 2s ease-in-out infinite; pointer-events:none; }
+@keyframes dealGlow { 0%,100% { opacity:0.5; transform:translate(-50%,-50%) scale(1); } 50% { opacity:1; transform:translate(-50%,-50%) scale(1.2); } }
+.deal-icon { font-size:3.5rem; margin-bottom:8px; animation:dealIconBounce 0.6s ease 0.2s both; }
+@keyframes dealIconBounce { from { transform:scale(0) rotate(-180deg); } to { transform:scale(1) rotate(0); } }
+.deal-panel h3 { font-family:'Ma Shan Zheng',serif; font-size:2rem; color:var(--vermilion); margin-bottom:12px; text-shadow:0 2px 8px rgba(199,62,29,0.2); }
+.deal-winner { font-size:1.4rem; font-family:'ZCOOL XiaoWei',serif; color:var(--ink-deep); margin-bottom:8px; animation:dealTextIn 0.5s ease 0.4s both; }
+.deal-price { font-size:2.2rem; font-weight:bold; color:var(--gold); margin:8px 0; animation:dealPriceIn 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.6s both; text-shadow:0 2px 4px rgba(200,168,76,0.3); }
+@keyframes dealPriceIn { from { opacity:0; transform:scale(0.5); } to { opacity:1; transform:scale(1); } }
+@keyframes dealTextIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+.deal-warehouse { font-size:0.9rem; opacity:0.6; margin-bottom:12px; animation:dealTextIn 0.5s ease 0.8s both; }
+.deal-hint { font-size:0.75rem; opacity:0.3; animation:dealHintPulse 1.5s ease-in-out infinite; }
+@keyframes dealHintPulse { 0%,100% { opacity:0.2; } 50% { opacity:0.5; } }
+.deal-overlay.kill .deal-panel { border-color:var(--vermilion); box-shadow:0 0 60px rgba(199,62,29,0.4), 0 8px 40px rgba(0,0,0,0.5); }
+.deal-overlay.kill .deal-glow { background:radial-gradient(circle,rgba(199,62,29,0.15),transparent 70%); }
+.deal-overlay.kill .deal-icon { animation:dealIconShake 0.5s ease 0.2s both; }
+@keyframes dealIconShake { 0% { transform:scale(0) rotate(-180deg); } 60% { transform:scale(1.3) rotate(10deg); } 80% { transform:scale(0.95) rotate(-5deg); } 100% { transform:scale(1) rotate(0); } }
+.deal-overlay.pass .deal-panel { border-color:rgba(43,43,43,0.3); box-shadow:0 8px 40px rgba(0,0,0,0.4); }
+.deal-overlay.pass .deal-glow { display:none; }
+
+/* 藏品揭晓弹窗 */
+.reveal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); align-items:center; justify-content:center; z-index:220; }
+.reveal-overlay.show { display:flex; }
+.reveal-panel { background:linear-gradient(135deg,var(--paper),var(--paper-dark)); border:2px solid var(--gold); border-radius:12px; padding:24px 32px; text-align:center; box-shadow:0 8px 40px rgba(0,0,0,0.5); max-width:560px; width:90%; }
+.reveal-panel h3 { font-family:'Ma Shan Zheng',serif; font-size:1.6rem; color:var(--vermilion); margin-bottom:8px; }
+.reveal-wh-name { font-size:0.9rem; opacity:0.6; margin-bottom:12px; }
+.reveal-stage { min-height:160px; display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; }
+.reveal-item { animation:revealFadeIn 0.5s ease; }
+@keyframes revealFadeIn { from { opacity:0; transform:translateY(20px) scale(0.9); } to { opacity:1; transform:translateY(0) scale(1); } }
+.reveal-item .ri-icon { font-size:2.5rem; margin-bottom:8px; }
+.reveal-item .ri-name { font-size:1.3rem; font-family:'ZCOOL XiaoWei',serif; color:var(--ink-deep); margin-bottom:4px; }
+.reveal-item .ri-quality { font-size:0.9rem; margin-bottom:4px; font-weight:bold; }
+.reveal-item .ri-type { font-size:0.8rem; opacity:0.5; margin-bottom:8px; }
+.reveal-item .ri-value { font-size:1.2rem; color:var(--gold); font-weight:bold; }
+.reveal-item .ri-value.flash { animation:valueFlash 0.4s ease; }
+@keyframes valueFlash { 0% { transform:scale(1); } 50% { transform:scale(1.3); color:var(--vermilion); } 100% { transform:scale(1); } }
+
+/* 已揭晓藏品缩略图排列 */
+.reveal-gallery { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-top:12px; min-height:40px; }
+.reveal-thumb { width:42px; height:42px; border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:1.2rem; border:1px solid rgba(200,168,76,0.3); background:rgba(255,255,255,0.4); animation:thumbPop 0.4s ease; position:relative; }
+.reveal-thumb .rt-val { font-size:0.55rem; color:var(--gold); font-weight:bold; line-height:1; }
+.reveal-thumb.q-red { border-color:var(--vermilion); background:rgba(199,62,29,0.08); }
+.reveal-thumb.q-gold { border-color:var(--gold); background:rgba(200,168,76,0.12); }
+.reveal-thumb.q-purple { border-color:#9b59b6; background:rgba(155,89,182,0.08); }
+.reveal-thumb.q-blue { border-color:var(--spirit-blue); background:rgba(74,143,168,0.08); }
+.reveal-thumb.q-green { border-color:var(--jade); background:rgba(107,142,63,0.08); }
+.reveal-thumb.q-white { border-color:rgba(43,43,43,0.2); }
+@keyframes thumbPop { from { opacity:0; transform:scale(0); } 60% { transform:scale(1.2); } to { opacity:1; transform:scale(1); } }
+
+/* 累积价值条 */
+.reveal-cumulative { margin-top:10px; padding:8px 16px; background:linear-gradient(135deg,rgba(200,168,76,0.15),rgba(200,168,76,0.05)); border:1px solid rgba(200,168,76,0.3); border-radius:8px; display:flex; justify-content:space-between; align-items:center; }
+.reveal-cumulative .rc-label { font-size:0.8rem; opacity:0.6; }
+.reveal-cumulative .rc-value { font-size:1.3rem; font-weight:bold; color:var(--gold); }
+.reveal-cumulative .rc-value.bump { animation:cumulativeBump 0.5s ease; }
+@keyframes cumulativeBump { 0% { transform:scale(1); } 40% { transform:scale(1.25); color:var(--vermilion); } 100% { transform:scale(1); } }
+
+.reveal-counter { font-size:0.8rem; opacity:0.4; margin-top:8px; }
+.reveal-tally { margin-top:12px; padding:12px; background:rgba(43,43,43,0.06); border-radius:8px; }
+.reveal-tally-row { display:flex; justify-content:space-between; align-items:center; font-size:0.9rem; margin:4px 0; }
+.reveal-tally-row .label { opacity:0.6; }
+.reveal-tally-row .val { font-weight:bold; }
+.reveal-tally-row .val.gold { color:var(--gold); }
+.reveal-tally-row .val.jade { color:var(--jade); }
+.reveal-tally-row .val.red { color:var(--vermilion); }
+.reveal-tally-divider { height:1px; background:rgba(43,43,43,0.1); margin:6px 0; }
+.reveal-tally-total { font-size:1.2rem; }
+.reveal-skip { margin-top:10px; font-size:0.75rem; opacity:0.3; }
+
+/* 出价建议按钮 */
+.bid-suggestions { display:flex; gap:6px; justify-content:center; flex-wrap:wrap; margin-bottom:8px; }
+
+/* P1-5: 技能栏 */
+.skill-bar { display:flex; gap:4px; align-items:center; flex-wrap:wrap; justify-content:center; margin-bottom:6px; padding:4px 8px; background:rgba(200,168,76,0.08); border-radius:6px; }
+.skill-btn { font-size:0.7rem; padding:3px 8px; border:1px solid var(--gold); background:rgba(200,168,76,0.1); color:var(--ink-deep); border-radius:4px; cursor:pointer; transition:all 0.2s; }
+.skill-btn:hover:not(.disabled) { background:rgba(200,168,76,0.25); transform:translateY(-1px); }
+.skill-btn.disabled { opacity:0.3; cursor:not-allowed; }
+.combo-indicator { font-size:0.75rem; padding:2px 8px; border-radius:4px; background:linear-gradient(135deg,rgba(199,62,29,0.15),rgba(200,168,76,0.15)); color:var(--vermilion); font-weight:bold; }
+.bid-suggestion-btn { padding:4px 12px; font-size:0.8rem; border:1px solid var(--gold); border-radius:4px; background:rgba(200,168,76,0.1); color:var(--ink-deep); cursor:pointer; transition:all 0.2s; font-family:'ZCOOL XiaoWei',serif; }
+.bid-suggestion-btn:hover { background:rgba(200,168,76,0.25); transform:translateY(-1px); }
+.bid-suggestion-btn .sug-label { font-size:0.7rem; opacity:0.6; }
+.bid-suggestion-btn .sug-value { font-weight:bold; color:var(--vermilion); }
+
+/* 估值提示 */
+.estimate-hint { text-align:center; font-size:0.8rem; color:var(--spirit-blue); margin:4px 0; opacity:0.7; }
+
+/* 天道积分显示 */
+.tdao-badge { display:inline-block; padding:2px 10px; background:linear-gradient(135deg,var(--gold),#b8941e); color:var(--ink-deep); border-radius:12px; font-size:0.8rem; font-weight:bold; margin-left:8px; }
+
+/* 修炼商店 */
+.shop-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); align-items:center; justify-content:center; z-index:250; }
+.shop-overlay.show { display:flex; }
+.shop-panel { background:linear-gradient(135deg,var(--paper),var(--paper-dark)); border:2px solid var(--gold); border-radius:12px; padding:28px; max-width:680px; max-height:85vh; overflow-y:auto; box-shadow:0 8px 40px rgba(0,0,0,0.5); }
+.shop-panel h3 { font-family:'Ma Shan Zheng',serif; font-size:1.8rem; color:var(--gold); text-align:center; margin-bottom:4px; letter-spacing:0.2em; }
+.shop-panel .shop-subtitle { text-align:center; font-size:0.9rem; opacity:0.6; margin-bottom:16px; }
+.shop-balance { text-align:center; font-size:1.1rem; margin-bottom:16px; }
+.shop-balance .balance-val { color:var(--vermilion); font-weight:bold; font-size:1.4rem; }
+.shop-item { display:flex; align-items:center; gap:12px; padding:12px; margin-bottom:8px; background:rgba(200,168,76,0.08); border:1px solid rgba(200,168,76,0.2); border-radius:8px; transition:all 0.2s; }
+.shop-item:hover { background:rgba(200,168,76,0.15); }
+.shop-item.owned { opacity:0.5; }
+.shop-item.maxed { opacity:0.5; }
+.shop-item .shop-icon { font-size:1.8rem; flex-shrink:0; }
+.shop-item .shop-info { flex:1; }
+.shop-item .shop-name { font-weight:bold; font-size:0.95rem; }
+.shop-item .shop-desc { font-size:0.8rem; opacity:0.6; margin-top:2px; }
+.shop-item .shop-level { font-size:0.75rem; color:var(--spirit-blue); margin-top:2px; }
+.shop-item .shop-buy-btn { padding:6px 16px; border:1px solid var(--vermilion); border-radius:6px; background:rgba(192,57,43,0.1); color:var(--vermilion); cursor:pointer; font-family:'ZCOOL XiaoWei',serif; font-size:0.85rem; white-space:nowrap; transition:all 0.2s; }
+.shop-item .shop-buy-btn:hover:not(:disabled) { background:var(--vermilion); color:var(--paper); }
+.shop-item .shop-buy-btn:disabled { opacity:0.4; cursor:not-allowed; }
+.shop-item .shop-buy-btn.owned { background:var(--jade); color:var(--paper); border-color:var(--jade); }
+.shop-close { display:block; width:100%; margin-top:12px; padding:10px; background:transparent; border:1px solid rgba(43,43,43,0.2); color:rgba(43,43,43,0.5); border-radius:6px; cursor:pointer; font-family:'ZCOOL XiaoWei',serif; font-size:1rem; }
+.shop-close:hover { background:rgba(43,43,43,0.05); }
+
+/* 藏品收藏页签 */
+.tab-bar { display:flex; gap:0; border-bottom:2px solid var(--gold); margin-bottom:8px; }
+.tab-btn { flex:1; padding:6px 12px; text-align:center; cursor:pointer; font-family:'ZCOOL XiaoWei',serif; font-size:0.9rem; color:rgba(43,43,43,0.5); border-bottom:2px solid transparent; margin-bottom:-2px; transition:all 0.2s; background:none; border-top:none; border-left:none; border-right:none; }
+.tab-btn.active { color:var(--vermilion); border-bottom-color:var(--vermilion); font-weight:bold; }
+.tab-btn:hover { color:var(--ink-deep); }
+.tab-content { display:none; }
+.tab-content.active { display:block; }
+.collection-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:6px; max-height:300px; overflow-y:auto; }
+.collection-card { padding:8px; background:rgba(200,168,76,0.06); border:1px solid rgba(200,168,76,0.15); border-radius:6px; font-size:0.8rem; }
+.collection-card .cc-name { font-weight:bold; font-size:0.85rem; }
+.collection-card .cc-meta { font-size:0.7rem; opacity:0.6; margin-top:2px; }
+.collection-card .cc-profit { font-size:0.75rem; margin-top:2px; }
+.collection-card .cc-profit.gain { color:var(--jade); }
+.collection-card .cc-profit.loss { color:var(--vermilion); }
+.collection-card .cc-source { font-size:0.75rem; opacity:0.4; margin-top:2px; font-style:italic; }
+.empty-hint { text-align:center; padding:20px; opacity:0.4; font-size:0.85rem; }
+
+#spiritCanvas { position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:0; opacity:0.5; }
+
+/* 出价按钮反馈动画 */
+@keyframes bidSubmit { 0% { transform:scale(1); } 30% { transform:scale(0.9); } 60% { transform:scale(1.05); } 100% { transform:scale(1); } }
+.btn-primary.bidding { animation:bidSubmit 0.4s ease; }
+/* 灵石数字变化动画 */
+@keyframes lingshiChange { 0% { transform:scale(1); color:var(--gold); } 50% { transform:scale(1.3); color:var(--vermilion); } 100% { transform:scale(1); color:var(--gold); } }
+.lingshi-change { animation:lingshiChange 0.5s ease; }
+
+/* 线索揭示动画 */
+@keyframes clueReveal { 0% { opacity:0; transform:translateX(-10px); } 100% { opacity:1; transform:translateX(0); } }
+.clue-item-new { animation:clueReveal 0.5s ease; }
+/* 仓库格子揭示动画 */
+@keyframes cellReveal { 0% { opacity:0.3; transform:scale(0.8); } 100% { opacity:1; transform:scale(1); } }
+.warehouse-cell.revealed { animation:cellReveal 0.4s ease; }
+
+/* NPC出价状态动画 */
+@keyframes npcBidFlash { 0% { background:rgba(200,168,76,0.2); } 100% { background:rgba(43,43,43,0.03); } }
+.npc-card.bid-flash { animation:npcBidFlash 0.6s ease; }
+
+/* 成交弹窗金光散射 */
+@keyframes dealRays { 0% { opacity:0; transform:translate(-50%,-50%) rotate(0deg); } 100% { opacity:0.3; transform:translate(-50%,-50%) rotate(360deg); } }
+.deal-rays { position:absolute; top:50%; left:50%; width:400px; height:400px; background:conic-gradient(from 0deg,transparent,rgba(200,168,76,0.3),transparent,rgba(200,168,76,0.3),transparent,rgba(200,168,76,0.3),transparent,rgba(200,168,76,0.3),transparent); border-radius:50%; animation:dealRays 4s linear infinite; pointer-events:none; }
+
+/* 开始界面标题动画 */
+@keyframes titleGlow { 0%,100% { text-shadow:2px 2px 8px var(--shadow); } 50% { text-shadow:2px 2px 8px var(--shadow), 0 0 20px rgba(200,168,76,0.4); } }
+.start-overlay h2 { animation:titleGlow 3s ease-in-out infinite; }
+/* 入局按钮脉冲 */
+@keyframes btnPulse { 0%,100% { box-shadow:0 2px 8px rgba(199,62,29,0.3); } 50% { box-shadow:0 4px 16px rgba(199,62,29,0.5); } }
+.start-btn { animation:btnPulse 2s ease-in-out infinite; }
+</style>
+</head>
+<body>
+<canvas id="spiritCanvas"></canvas>
+
+<!-- 音频控制按钮 -->
+<div id="audioToggle" style="position:fixed;top:12px;right:12px;z-index:200;cursor:pointer;font-size:1.5rem;opacity:0.5;transition:opacity 0.2s;user-select:none;" onclick="toggleAudio()" title="开启/关闭声音">🔇</div>
+
+<!-- 开始遮罩 -->
+<div class="start-overlay" id="startOverlay">
+  <h2>天道拍卖行</h2>
+  <p>
+    天道无常，机缘流转。<br>
+    此番竞拍所争者，乃修士遗留之"洞府仓库"——内含多件法宝、功法、灵物。<br>
+    仓库内容初始封印，五轮竞拍中线索逐步揭晓，每轮随机释放不同类型的天机线索：<br>
+    品质分布、种类年代、珍品名号、价值区间、最贵最廉、传说感应……种类丰富，每局不同。<br>
+    前四轮可秒杀终结（倍率递减），出价针对整个仓库，价高者得全部藏品。<br>
+    道友，可敢入局？
+  </p>
+  <div style="margin-bottom:12px;">
+    <label style="font-size:0.9rem;opacity:0.7;margin-right:8px;">道号：</label>
+    <input type="text" id="playerNameInput" value="李逍遥" maxlength="8" style="padding:4px 10px;border:1px solid var(--gold);border-radius:4px;background:rgba(255,255,255,0.5);font-family:'ZCOOL XiaoWei',serif;font-size:1rem;width:120px;text-align:center;">
+  </div>
+  <div id="startTdaoDisplay" style="margin-bottom:12px;font-size:0.9rem;opacity:0.7;"></div>
+  <button class="start-btn" onclick="enterTierSelect()">入局</button>
+  <button class="btn btn-ghost" style="margin-top:12px;font-size:1rem;" onclick="openShop(true)">修炼坊市（局外养成）</button>
+  <button class="btn btn-ghost" style="margin-top:8px;font-size:1rem;" onclick="openCultivation()">修仙洞府（挂机修炼）</button>
+</div>
+
+<!-- 拍卖场选择 -->
+<div class="tier-select-overlay" id="tierSelectOverlay">
+  <h2>选择拍卖场</h2>
+  <div class="tier-subtitle">不同等级入场费不同，仓库价值不同</div>
+  <div class="tier-cards">
+    <div class="tier-card fanchen" onclick="selectTier('凡尘阁')">
+      <div class="tier-icon">🌿</div><div class="tier-name">凡尘阁</div>
+      <div class="tier-fee">入场费 200 灵石</div>
+      <div class="tier-range">仓库价值 500~3000 灵石</div>
+      <div class="tier-desc">散修聚集之地，仓库内多为凡品，偶有惊喜。</div>
+    </div>
+    <div class="tier-card lingbao" onclick="selectTier('灵宝殿')">
+      <div class="tier-icon">🔮</div><div class="tier-name">灵宝殿</div>
+      <div class="tier-fee">入场费 800 灵石</div>
+      <div class="tier-range">仓库价值 2000~12000 灵石</div>
+      <div class="tier-desc">各门派弟子常驻之所，仓库常有珍品现世。</div>
+    </div>
+    <div class="tier-card tianji" onclick="selectTier('天机阁')">
+      <div class="tier-icon">⚡</div><div class="tier-name">天机阁</div>
+      <div class="tier-fee">入场费 3000 灵石</div>
+      <div class="tier-range">仓库价值 8000~50000 灵石</div>
+      <div class="tier-desc">天道使者亲掌之秘境，仓库内或有传说级重宝。</div>
+    </div>
+  </div>
+</div>
+
+<!-- 主界面 -->
+<div class="main-container" id="mainContainer" style="display:none;">
+  <div class="auction-stage">
+    <div class="header">
+      <h1>天道拍卖行</h1>
+      <span class="tier-badge" id="tierBadge"></span>
+      <div class="subtitle">第 <span id="itemNum">1</span> 个仓库 · 当前第 <span id="roundNum">1</span>/5 轮</div>
+    </div>
+
+    <div class="round-progress" id="roundProgress"></div>
+
+    <div class="kill-price-banner" id="killPriceBanner">
+      <div class="kill-text">⚡ 本轮秒杀阈值</div>
+      <div class="kill-threshold" id="killThreshold"></div>
+    </div>
+
+    <!-- 仓库展示区 -->
+    <div class="warehouse-area">
+      <div class="warehouse-header">
+        <div class="warehouse-title" id="warehouseTitle">洞府仓库·壹</div>
+        <div class="warehouse-desc" id="warehouseDesc">此仓库来历神秘，内含多件藏品，需逐轮探查方知全貌</div>
+      </div>
+      <div class="warehouse-grid" id="warehouseGrid"></div>
+      <div class="warehouse-stats" id="warehouseStats"></div>
+    </div>
+
+    <!-- 线索区 -->
+    <div class="clues-area" id="cluesArea">
+      <div class="clues-title">🔮 天机线索（每轮随机释放，种类丰富）</div>
+      <div id="cluesList" style="font-size:0.85rem;opacity:0.5;">等待第一轮线索释放...</div>
+    </div>
+
+    <!-- 竞价信息 -->
+    <div class="bid-info">
+      <div class="bid-info-item"><div class="label">仓库底价</div><div class="value"><span class="base-price-badge" id="basePrice">💰 --</span></div></div>
+      <div class="bid-info-item"><div class="label">上轮出价分布</div><div class="value" id="bidHint" style="font-size:0.9rem;">--</div></div>
+      <div class="bid-info-item"><div class="label">你的上轮出价</div><div class="value" id="myLastBid">--</div></div>
+    </div>
+
+    <!-- 估值提示 -->
+    <div class="estimate-hint" id="estimateHint"></div>
+
+    <!-- 出价建议 -->
+    <div class="bid-suggestions" id="bidSuggestions"></div>
+
+    <!-- P1-5: 技能栏 + P1-3: 连击指示器 -->
+    <div class="skill-bar" id="skillBar"></div>
+    <div id="comboIndicator" style="text-align:center;margin-bottom:4px;display:none;"></div>
+
+    <!-- 出价控制 -->
+    <div class="bid-controls" id="bidControls">
+      <input type="number" class="bid-input" id="bidInput" placeholder="灵石数目" min="1">
+      <button class="btn btn-primary" id="bidBtn" onclick="playerBid()">出价</button>
+      <button class="btn btn-ghost" id="passBtn" onclick="playerPass()">弃权</button>
+      <label class="overdraft-toggle" title="1寿元=100灵石，透支会导致走火入魔"><input type="checkbox" id="overdraftCheck"> 透支寿元<span style="font-size:0.7rem;opacity:0.6;">（1寿元=100💎，入魔风险）</span></label>
+      <button class="btn btn-comeback" id="comebackBtn" onclick="showComebackPanel()" style="display:none;">东山再起</button>
+    </div>
+    <div id="waitHint" style="text-align:center;font-size:0.85rem;opacity:0.5;padding:4px;display:none;">已提交出价，等待其他道友...</div>
+
+    <div class="bid-log" id="bidLog"><div style="text-align:center;opacity:0.4;padding:8px;">等待竞价开始...</div></div>
+  </div>
+
+  <!-- 侧边栏 -->
+  <div class="sidebar">
+    <div class="player-panel">
+      <div class="panel-title">
+        <span>道友 · <span class="player-name" id="playerName">李逍遥</span><span class="tdao-badge" id="tdaoBadge">0</span></span>
+        <span>
+          <span class="zhouhuo-badge" id="zhouhuoBadge" style="display:none;">入魔 0</span>
+          <span class="zhouhuo-badge" id="purifyBadge" style="display:none;cursor:pointer;background:var(--jade);" onclick="purifyZhouhuo()" title="消耗10功德降低1层入魔">功德降魔</span>
+          <span class="debt-badge" id="debtBadge" style="display:none;cursor:pointer;" onclick="repayDebt()" title="点击偿还债务">债务 0</span>
+        </span>
+      </div>
+      <div class="resource-grid">
+        <div class="resource-item" title="用于出价和入场费，可跨局累积"><span class="res-icon">💎</span>灵石 <span class="res-value" id="resLingshi">3000</span></div>
+        <div class="resource-item" title="透支出价时消耗（1寿元=50灵石），也用于天道试炼换取灵石"><span class="res-icon">⏳</span>寿元 <span class="res-value" id="resShouyuan">200</span></div>
+        <div class="resource-item" title="用于功德降魔，抵消走火入魔层数"><span class="res-icon">🌟</span>功德 <span class="res-value" id="resGongde">20</span></div>
+        <div class="resource-item" title="越高越容易走火入魔（≥40增加入魔层数）"><span class="res-icon">🌑</span>业障 <span class="res-value" id="resYezhang">30</span></div>
+        <div class="resource-item" title="影响天机估值精度（越高估值越准）"><span class="res-icon">👁️</span>神识 <span class="res-value" id="resShenshi">100</span></div>
+        <div class="resource-item" id="resZhouhuoItem" title="透支出价导致走火入魔，≥3层限制出价上限为灵石的50%"><span class="res-icon">🔥</span>入魔 <span class="res-value" id="resZhouhuo">0</span></div>
+      </div>
+    </div>
+    <div class="collection-panel" id="collectionPanel">
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('collection')">藏品收藏</button>
+        <button class="tab-btn" onclick="switchTab('history')">拍卖战报</button>
+      </div>
+      <div class="tab-content active" id="tabCollection">
+        <div id="collectionList"></div>
+      </div>
+      <div class="tab-content" id="tabHistory">
+        <div id="historyList"></div>
+      </div>
+    </div>
+    <div class="npc-list">
+      <div class="panel-title">各派修士</div>
+      <div id="npcContainer"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 天道使者播报 -->
+<div class="announcement-area announce-bar" id="announcementArea">
+  <div class="announcement-bubble" id="announcementBubble">
+    <span class="speaker">天道使者：</span><span id="announcementText"></span>
+  </div>
+</div>
+
+<!-- 东山再起面板 -->
+<div class="comeback-overlay" id="comebackOverlay">
+  <div class="comeback-panel">
+    <h3>东山再起</h3>
+    <div class="comeback-desc">道友灵石不足，可选择以下方式重整旗鼓</div>
+    <button class="comeback-option" id="cbPawn" onclick="comebackAction('典当藏品')"><div class="co-title">📦 典当藏品</div><div class="co-desc">将已拍得的藏品折价变现（获得真实价值70%灵石）</div></button>
+    <button class="comeback-option" id="cbTrial" onclick="comebackAction('天道试炼')"><div class="co-title">⚡ 天道试炼</div><div class="co-desc">消耗寿元完成试炼，获取灵石（1寿元=50灵石，30%失败风险）</div></button>
+    <button class="comeback-option" id="cbLoan" onclick="comebackAction('门派借贷')"><div class="co-title">🏦 门派借贷</div><div class="co-desc">向门派借灵石，需还本付息（利率20%，最多2次）</div></button>
+    <button class="comeback-option" id="cbReincarnate" onclick="comebackAction('因果转世')"><div class="co-title">轮回 因果转世</div><div class="co-desc">最后手段：寿元折半，保留50%藏品，清除所有债务，资源重置</div></button>
+    <button class="comeback-close" onclick="hideComebackPanel()">暂不使用</button>
+  </div>
+</div>
+
+<div class="comeback-input-overlay" id="comebackInputOverlay">
+  <div class="comeback-input-box">
+    <div id="cbPawnList" style="display:none;"></div>
+    <div id="cbInputMain">
+      <h4 id="cbInputTitle">输入数值</h4>
+      <p id="cbInputDesc">请输入</p>
+      <input type="number" id="cbInputValue" min="1" value="10">
+      <div class="input-btns">
+        <button class="btn btn-ghost" onclick="hideComebackInput()">取消</button>
+        <button class="btn btn-comeback" onclick="confirmComebackInput()">确认</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 修炼坊市（局外养成商店） -->
+<div class="shop-overlay" id="shopOverlay">
+  <div class="shop-panel">
+    <h3>修炼坊市</h3>
+    <div class="shop-subtitle">消耗天道积分，永久解锁修炼能力</div>
+    <div class="shop-balance">天道积分：<span class="balance-val" id="shopBalance">0</span></div>
+    <div id="shopItems"></div>
+    <button class="shop-close" onclick="closeShop()">关闭坊市</button>
+  </div>
+</div>
+
+<!-- 修仙洞府（挂机修炼） -->
+<div class="shop-overlay" id="cultivationOverlay">
+  <div class="shop-panel">
+    <h3>修仙洞府</h3>
+    <div id="cultivationContent" style="min-height:300px;"></div>
+    <button class="btn btn-ghost" style="margin-top:12px;" onclick="closeCultivation()">返回</button>
+  </div>
+</div>
+
+<!-- 成交确认弹窗 -->
+<div class="deal-overlay" id="dealOverlay">
+  <div class="deal-panel">
+    <div class="deal-glow"></div>
+    <div class="deal-rays"></div>
+    <div class="deal-icon" id="dealIcon">🏆</div>
+    <h3 id="dealTitle">天机已定</h3>
+    <div class="deal-winner" id="dealWinner"></div>
+    <div class="deal-price" id="dealPrice"></div>
+    <div class="deal-warehouse" id="dealWarehouse"></div>
+    <div class="deal-hint">即将揭晓藏品...</div>
+  </div>
+</div>
+
+<!-- 藏品揭晓弹窗 -->
+<div class="reveal-overlay" id="revealOverlay">
+  <div class="reveal-panel">
+    <h3 id="revealTitle">天机揭晓</h3>
+    <div class="reveal-wh-name" id="revealWhName"></div>
+    <div class="reveal-stage" id="revealStage"></div>
+    <div class="reveal-counter" id="revealCounter"></div>
+    <div class="reveal-gallery" id="revealGallery"></div>
+    <div class="reveal-cumulative" id="revealCumulative" style="display:none;">
+      <span class="rc-label">累积价值</span>
+      <span class="rc-value" id="revealCumValue">0</span>
+    </div>
+    <div class="reveal-tally" id="revealTally" style="display:none;"></div>
+    <div class="reveal-skip">点击跳过</div>
+  </div>
+</div>
+
+<!-- 结算弹窗 -->
+<div class="settlement-overlay" id="settlementOverlay">
+  <div class="settlement-card">
+    <h3 id="settleTitle">天机已定</h3>
+    <div class="winner-name" id="settleWinner"></div>
+    <div class="final-price" id="settlePrice"></div>
+    <div class="settle-profit" id="settleProfit"></div>
+    <div class="warehouse-summary" id="warehouseSummary"></div>
+    <div class="settle-desc" id="settleDesc"></div>
+    <button class="btn btn-primary" onclick="nextItem()" id="nextBtn">下一个仓库</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  《天道拍卖行》仓库集竞拍版
+//  核心改造：竞拍对象从"单件拍品"改为"仓库集（含多件藏品）"
+//  每轮揭晓的是仓库内藏品的信息，出价针对整个仓库
+// ============================================================
+
+// ============================================================
+//  音频系统（Web Audio API 程序化生成 BGM 与音效）
+// ============================================================
+let audioCtx = null;
+let audioEnabled = false;
+let bgmGain = null;
+let bgmInterval = null;
+let sfxGain = null;
+
+// 中国五声音阶（宫商角徵羽）频率表
+const PENTATONIC = {
+  C4: 261.63, D4: 293.66, E4: 329.63, G4: 392.00, A4: 440.00,
+  C5: 523.25, D5: 587.33, E5: 659.25, G5: 783.99, A5: 880.00,
+  C3: 130.81, D3: 146.83, E3: 164.81, G3: 196.00, A3: 220.00,
+};
+
+// BGM 旋律（仙侠风格五声音阶旋律）
+const BGM_MELODY = [
+  { note: 'G4', dur: 0.5 }, { note: 'A4', dur: 0.5 }, { note: 'C5', dur: 1.0 },
+  { note: 'A4', dur: 0.5 }, { note: 'G4', dur: 0.5 }, { note: 'E4', dur: 1.0 },
+  { note: 'D4', dur: 0.5 }, { note: 'E4', dur: 0.5 }, { note: 'G4', dur: 1.0 },
+  { note: 'A4', dur: 0.5 }, { note: 'G4', dur: 0.5 }, { note: 'E4', dur: 1.0 },
+  { note: 'C5', dur: 0.5 }, { note: 'D5', dur: 0.5 }, { note: 'C5', dur: 1.0 },
+  { note: 'A4', dur: 0.5 }, { note: 'G4', dur: 0.5 }, { note: 'E4', dur: 1.0 },
+  { note: 'D4', dur: 1.0 }, { note: 'C4', dur: 1.0 }, { note: 'D4', dur: 0.5 }, { note: 'E4', dur: 0.5 },
+  { note: 'G4', dur: 2.0 },
+];
+
+// BGM 低音伴奏
+const BGM_BASS = [
+  { note: 'C3', dur: 2.0 }, { note: 'A3', dur: 2.0 }, { note: 'D3', dur: 2.0 }, { note: 'G3', dur: 2.0 },
+];
+
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  bgmGain = audioCtx.createGain();
+  bgmGain.gain.value = 0.08;
+  bgmGain.connect(audioCtx.destination);
+  sfxGain = audioCtx.createGain();
+  sfxGain.gain.value = 0.15;
+  sfxGain.connect(audioCtx.destination);
+}
+
+function toggleAudio() {
+  const btn = document.getElementById('audioToggle');
+  if (!audioEnabled) {
+    initAudio();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    audioEnabled = true;
+    btn.textContent = '🔊';
+    btn.style.opacity = '0.8';
+    startBGM();
+  } else {
+    audioEnabled = false;
+    btn.textContent = '🔇';
+    btn.style.opacity = '0.5';
+    stopBGM();
+  }
+}
+
+function startBGM() {
+  if (!audioEnabled || !audioCtx) return;
+  stopBGM();
+
+  let melodyIdx = 0;
+  let bassIdx = 0;
+  let nextMelodyTime = audioCtx.currentTime;
+  let nextBassTime = audioCtx.currentTime;
+
+  function scheduleNotes() {
+    if (!audioEnabled) return;
+    const now = audioCtx.currentTime;
+    const lookahead = 1.5;
+
+    // 调度旋律
+    while (nextMelodyTime < now + lookahead) {
+      const note = BGM_MELODY[melodyIdx];
+      playBgmNote(PENTATONIC[note.note], nextMelodyTime, note.dur, 'triangle');
+      nextMelodyTime += note.dur;
+      melodyIdx = (melodyIdx + 1) % BGM_MELODY.length;
+    }
+
+    // 调度低音
+    while (nextBassTime < now + lookahead) {
+      const note = BGM_BASS[bassIdx];
+      playBgmNote(PENTATONIC[note.note], nextBassTime, note.dur, 'sine', 0.6);
+      nextBassTime += note.dur;
+      bassIdx = (bassIdx + 1) % BGM_BASS.length;
+    }
+  }
+
+  bgmInterval = setInterval(scheduleNotes, 500);
+  scheduleNotes();
+}
+
+function stopBGM() {
+  if (bgmInterval) { clearInterval(bgmInterval); bgmInterval = null; }
+}
+
+function playBgmNote(freq, startTime, duration, waveType, volMult = 1.0) {
+  if (!audioCtx || !bgmGain) return;
+  const osc = audioCtx.createOscillator();
+  const env = audioCtx.createGain();
+  osc.type = waveType;
+  osc.frequency.value = freq;
+  env.gain.setValueAtTime(0, startTime);
+  env.gain.linearRampToValueAtTime(0.4 * volMult, startTime + 0.05);
+  env.gain.exponentialRampToValueAtTime(0.01, startTime + duration * 0.9);
+  osc.connect(env);
+  env.connect(bgmGain);
+  osc.start(startTime);
+  osc.stop(startTime + duration);
+}
+
+// —— 音效系统 ——
+function playSfx(type) {
+  if (!audioEnabled || !audioCtx || !sfxGain) return;
+  const now = audioCtx.currentTime;
+
+  switch (type) {
+    case 'bid_submit': // 出价提交：清脆叮声
+      playTone(880, now, 0.08, 'triangle', 0.5);
+      playTone(1318, now + 0.05, 0.12, 'triangle', 0.4);
+      break;
+    case 'pass': // 弃权：低沉一声
+      playTone(220, now, 0.2, 'sine', 0.4);
+      break;
+    case 'round_start': // 新轮开始：钟声
+      playTone(523, now, 0.3, 'sine', 0.5);
+      playTone(659, now + 0.1, 0.4, 'sine', 0.4);
+      playTone(784, now + 0.2, 0.5, 'sine', 0.3);
+      break;
+    case 'reveal': // 线索揭示：神秘音
+      playTone(440, now, 0.1, 'triangle', 0.3);
+      playTone(587, now + 0.08, 0.15, 'triangle', 0.3);
+      playTone(740, now + 0.16, 0.2, 'triangle', 0.3);
+      break;
+    case 'kill': // 秒杀：震撼音
+      playTone(130, now, 0.15, 'sawtooth', 0.6);
+      playTone(196, now + 0.05, 0.2, 'sawtooth', 0.5);
+      playTone(262, now + 0.1, 0.3, 'square', 0.4);
+      playNoise(now, 0.3, 0.3);
+      break;
+    case 'win': // 竞拍成功：上扬旋律
+      playTone(523, now, 0.12, 'triangle', 0.5);
+      playTone(659, now + 0.1, 0.12, 'triangle', 0.5);
+      playTone(784, now + 0.2, 0.12, 'triangle', 0.5);
+      playTone(1047, now + 0.3, 0.3, 'triangle', 0.5);
+      break;
+    case 'lose': // 竞拍失败：下沉音
+      playTone(440, now, 0.15, 'sine', 0.4);
+      playTone(370, now + 0.12, 0.15, 'sine', 0.4);
+      playTone(294, now + 0.24, 0.3, 'sine', 0.4);
+      break;
+    case 'comeback': // 东山再起：重整鼓声
+      playTone(150, now, 0.1, 'square', 0.5);
+      playTone(150, now + 0.15, 0.1, 'square', 0.5);
+      playTone(200, now + 0.3, 0.2, 'square', 0.5);
+      break;
+    case 'shop_buy': // 商店购买：清脆成功音
+      playTone(659, now, 0.08, 'triangle', 0.5);
+      playTone(880, now + 0.06, 0.08, 'triangle', 0.5);
+      playTone(1047, now + 0.12, 0.15, 'triangle', 0.5);
+      break;
+    case 'click': // 按钮点击
+      playTone(600, now, 0.03, 'square', 0.2);
+      break;
+    case 'zhouhuo': // 走火入魔：不和谐音
+      playTone(200, now, 0.2, 'sawtooth', 0.5);
+      playTone(280, now + 0.05, 0.2, 'sawtooth', 0.4);
+      playNoise(now, 0.4, 0.3);
+      break;
+    case 'settle': // 结算：庄重音
+      playTone(262, now, 0.3, 'sine', 0.5);
+      playTone(330, now + 0.15, 0.3, 'sine', 0.4);
+      playTone(392, now + 0.3, 0.5, 'sine', 0.4);
+      break;
+  }
+}
+
+function playTone(freq, startTime, duration, waveType, vol) {
+  if (!audioCtx || !sfxGain) return;
+  const osc = audioCtx.createOscillator();
+  const env = audioCtx.createGain();
+  osc.type = waveType;
+  osc.frequency.value = freq;
+  env.gain.setValueAtTime(0, startTime);
+  env.gain.linearRampToValueAtTime(vol, startTime + 0.01);
+  env.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+  osc.connect(env);
+  env.connect(sfxGain);
+  osc.start(startTime);
+  osc.stop(startTime + duration);
+}
+
+function playNoise(startTime, duration, vol) {
+  if (!audioCtx || !sfxGain) return;
+  const bufferSize = audioCtx.sampleRate * duration;
+  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) {
+    data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+  }
+  const noise = audioCtx.createBufferSource();
+  noise.buffer = buffer;
+  const env = audioCtx.createGain();
+  env.gain.value = vol;
+  noise.connect(env);
+  env.connect(sfxGain);
+  noise.start(startTime);
+}
+
+const TOTAL_ROUNDS = 5;
+const KILL_THRESHOLDS = [1.0, 0.6, 0.4, 0.2, -1];
+const SHOUYUAN_RATE = 100;
+const PAWN_RATIO = 0.7;
+const TRIAL_RATE = 50;
+const TRIAL_RISK = 0.3;
+const LOAN_INTEREST = 0.2;
+const MAX_LOANS = 2;
+
+const TIER_CONFIGS = {
+  '凡尘阁': { entryFee:200, valueMin:500, valueMax:3000, aiCount:3, aiLingshiRange:[2000,5000], itemCountRange:[4,7] },
+  '灵宝殿': { entryFee:800, valueMin:2000, valueMax:12000, aiCount:4, aiLingshiRange:[5000,12000], itemCountRange:[5,9] },
+  '天机阁': { entryFee:3000, valueMin:8000, valueMax:50000, aiCount:4, aiLingshiRange:[10000,30000], itemCountRange:[6,10] },
+};
+
+// —— 藏品品质体系（致敬竞拍之王白绿蓝紫金红） ——
+const QUALITIES = [
+  { key:'white', name:'凡品', color:'q-white', valueMult:0.3, weight:30 },
+  { key:'green', name:'良品', color:'q-green', valueMult:0.6, weight:25 },
+  { key:'blue', name:'精良', color:'q-blue', valueMult:1.0, weight:20 },
+  { key:'purple', name:'稀有', color:'q-purple', valueMult:2.0, weight:15 },
+  { key:'gold', name:'史诗', color:'q-gold', valueMult:4.0, weight:7 },
+  { key:'red', name:'传说', color:'q-red', valueMult:8.0, weight:3 },
+];
+
+// —— 藏品名称库 ——
+const ITEM_TEMPLATES = [
+  { type:'法宝', icon:'⚔️', names:['诛仙剑残片','乾坤鼎碎片','太虚镜','玄铁剑胚','落魂钟','定海珠'] },
+  { type:'功法', icon:'📜', names:['太上忘情录','鬼谷天书','混元道典','紫微斗数','剑意残卷','炼魂诀'] },
+  { type:'灵物', icon:'🧪', names:['九转金丹','万年灵芝','凤凰血','龙髓液','灵脉石','天元丹'] },
+  { type:'灵兽', icon:'🥚', names:['天狐灵蛋','玄武蛋','朱雀羽','白虎牙','麒麟血','蛟龙鳞'] },
+  { type:'材料', icon:'💎', names:['九天玄铁','太乙精金','混沌原石','星辰砂','雷劫木','幽冥冰'] },
+];
+
+// —— 游戏状态 ——
+let G = {
+  tier:null, currentWarehouse:null, currentRound:0,
+  roundBids:{}, allClues:[], killPriceTriggered:false,
+  itemNum:1, totalItems:5, ownedItems:[], debts:[], loanCount:0,
+  aiSubmittedThisRound:false, pendingComebackMethod:null,
+  playerPassedThisRound:false, aiPassedThisRound:[],
+  lastRoundBids:[], // 上轮所有出价（用于建议）
+  warehouseClues:[], // 仓库线索池
+  sessionProfit:0, // 本局累计即时盈亏
+  warehouseHistory:[], // 每个仓库的结算记录
+  bestBids:{}, // P0-1: 每个竞拍者的跨轮最高承诺出价 { bidderId: {amount, overdraft, shouyuanSpent, round} }
+  comboStreak:0, comboType:'', // P1-3: 连击计数
+  skillTokens:0, skillsUsed:{}, // P1-5: 天道令（技能点）
+  achievements:{}, // P3-11: 成就记录
+  pendingEvent:null, // P1-4: 当前仓库的随机事件
+  flowpoolItems:[], // P2-7: 流拍池
+};
+
+let player = {
+  id:'p1', name:'李逍遥', sect:'仙灵岛', isPlayer:true,
+  lingshi:3000, shouyuan:200, gongde:20, yezhang:30, shenshi:100, zhouhuo:0,
+};
+let npcs = [];
+
+// ============================================================
+//  局外养成系统（Meta-Progression）
+// ============================================================
+const SAVE_KEY = 'tdpm_save_v1';
+
+// 能力定义：每个能力可多级解锁
+const ABILITIES = [
+  { id:'lingshi_boost', icon:'💰', name:'灵石底蕴', desc:'初始灵石+500/级',
+    maxLevel:5, costFn:(lv)=>200*(lv+1), effect:(lv)=>`+${lv*500}灵石` },
+  { id:'shouyuan_boost', icon:'⏳', name:'寿元绵长', desc:'初始寿元+30/级',
+    maxLevel:5, costFn:(lv)=>150*(lv+1), effect:(lv)=>`+${lv*30}寿元` },
+  { id:'gongde_boost', icon:'🌟', name:'功德深厚', desc:'初始功德+10/级',
+    maxLevel:3, costFn:(lv)=>300*(lv+1), effect:(lv)=>`+${lv*10}功德` },
+  { id:'shenshi_boost', icon:'👁️', name:'神识通明', desc:'初始神识+30/级',
+    maxLevel:3, costFn:(lv)=>250*(lv+1), effect:(lv)=>`+${lv*30}神识` },
+  { id:'extra_clue', icon:'🔮', name:'天机眼', desc:'第1轮额外多看1条线索/级',
+    maxLevel:2, costFn:(lv)=>500*(lv+1), effect:(lv)=>`+${lv}条线索` },
+  { id:'entry_discount', icon:'🎫', name:'人脉广阔', desc:'入场费-10%/级',
+    maxLevel:3, costFn:(lv)=>400*(lv+1), effect:(lv)=>`-${lv*10}%入场费` },
+  { id:'pawn_bonus', icon:'📦', name:'典当精通', desc:'典当折价率+5%/级',
+    maxLevel:4, costFn:(lv)=>200*(lv+1), effect:(lv)=>`+${lv*5}%折价` },
+  { id:'trial_guard', icon:'⚡', name:'天道庇护', desc:'天道试炼失败率-5%/级',
+    maxLevel:4, costFn:(lv)=>350*(lv+1), effect:(lv)=>`-${lv*5}%失败率` },
+  { id:'kill_insight', icon:'⚔️', name:'秒杀直觉', desc:'秒杀阈值显示更精确/级',
+    maxLevel:1, costFn:(lv)=>800, effect:(lv)=>'显示精确阈值' },
+  { id:'value_sense', icon:'📊', name:'价值感知', desc:'出价时显示估值范围/级',
+    maxLevel:1, costFn:(lv)=>600, effect:(lv)=>'显示估值提示' },
+];
+
+// ============================================================
+//  修仙系统（Cultivation System）
+// ============================================================
+const REALMS = [
+  { id:'liangi', name:'炼气期', icon:'🌀', subLevels:9, xiuweiPerLevel:100, desc:'初入修途，感应天地灵气' },
+  { id:'zhuji', name:'筑基期', icon:'🏗️', subLevels:3, xiuweiPerLevel:500, desc:'筑基固本，可透支出价' },
+  { id:'jindan', name:'金丹期', icon:'💊', subLevels:3, xiuweiPerLevel:2000, desc:'金丹大成，估值精度提升' },
+  { id:'yuanying', name:'元婴期', icon:'👶', subLevels:3, xiuweiPerLevel:8000, desc:'元婴出窍，额外感应线索' },
+  { id:'huashen', name:'化神期', icon:'✨', subLevels:3, xiuweiPerLevel:30000, desc:'化神返虚，出价上限提升' },
+  { id:'heti', name:'合体期', icon:'🔮', subLevels:3, xiuweiPerLevel:100000, desc:'天人合一，溢价补偿增加' },
+  { id:'dacheng', name:'大乘期', icon:'🌟', subLevels:3, xiuweiPerLevel:500000, desc:'大乘圆满，秒杀阈值降低' },
+  { id:'dujie', name:'渡劫期', icon:'⚡', subLevels:3, xiuweiPerLevel:2000000, desc:'渡劫飞升，全属性大幅提升' },
+];
+
+// 获取境界信息（返回当前大境界和小境界）
+function getRealmInfo() {
+  const xw = meta.xiuwei || 0;
+  let accumulated = 0;
+  for (let i = 0; i < REALMS.length; i++) {
+    const realm = REALMS[i];
+    const totalNeeded = realm.subLevels * realm.xiuweiPerLevel;
+    if (xw < accumulated + totalNeeded) {
+      const subLevel = Math.floor((xw - accumulated) / realm.xiuweiPerLevel) + 1;
+      return { realmIndex:i, realm:realm, subLevel:subLevel, progress:((xw - accumulated) % realm.xiuweiPerLevel) / realm.xiuweiPerLevel, nextXiuwei: accumulated + subLevel * realm.xiuweiPerLevel };
+    }
+    accumulated += totalNeeded;
+  }
+  // 已满级
+  const last = REALMS[REALMS.length-1];
+  return { realmIndex:REALMS.length-1, realm:last, subLevel:last.subLevels, progress:1, nextXiuwei: xw };
+}
+
+// 获取境界带来的能力加成
+function getRealmBonuses() {
+  const info = getRealmInfo();
+  const idx = info.realmIndex;
+  return {
+    canOverdraft: idx >= 1,        // 筑基期解锁透支
+    estimateBoost: idx >= 2 ? 0.1 : 0,  // 金丹期估值精度+10%
+    extraClueChance: idx >= 3 ? 0.15 : 0, // 元婴期15%概率额外线索
+    bidLimitMult: idx >= 4 ? 0.8 : 0.5,   // 化神期出价上限80%（vs 50%）
+    overflowBonus: idx >= 5 ? 0.2 : 0,    // 合体期溢价补偿+20%
+    killThresholdReduce: idx >= 6 ? 0.05 : 0, // 大乘期秒杀阈值-5%
+    allStatBoost: idx >= 7 ? 0.5 : 0,     // 渡劫期全属性+50%
+    realmIndex: idx,
+    realmName: info.realm.name,
+    subLevel: info.subLevel,
+  };
+}
+
+// 存档数据
+let meta = { tdaoPoints:0, abilities:{}, globalLingshi:null, xiuwei:0, lastMeditate:0 };
+
+function loadMeta() {
+  try {
+    const saved = localStorage.getItem(SAVE_KEY);
+    if (saved) {
+      const data = JSON.parse(saved);
+      meta.tdaoPoints = data.tdaoPoints || 0;
+      meta.abilities = data.abilities || {};
+      meta.globalLingshi = (typeof data.globalLingshi === 'number') ? data.globalLingshi : null;
+      meta.xiuwei = data.xiuwei || 0;
+      meta.lastMeditate = data.lastMeditate || 0;
+    }
+  } catch(e) { console.warn('存档读取失败', e); }
+}
+
+function saveMeta() {
+  try {
+    meta.globalLingshi = player.lingshi;
+    localStorage.setItem(SAVE_KEY, JSON.stringify(meta));
+  } catch(e) { console.warn('存档保存失败', e); }
+}
+
+// 打坐挂机：消耗灵石获取修为
+function meditate(cost) {
+  if (player.lingshi < cost) { showAnnouncement('灵石不足，无法打坐'); return; }
+  player.lingshi -= cost;
+  // 先结算时间修为
+  syncTimeXiuwei();
+  // 灵石加速：消耗灵石立即获得修为（加速方式）
+  const info = getRealmInfo();
+  const efficiency = 1 + info.realmIndex * 0.1;
+  const xiuweiGained = Math.floor(cost / 10 * efficiency);
+  meta.xiuwei += xiuweiGained;
+  saveMeta();
+  const newInfo = getRealmInfo();
+  let msg = `灵石催化修炼，消耗${cost}灵石，获得${xiuweiGained}修为。当前：${newInfo.realm.name}${newInfo.subLevel}层。`;
+  // 检查是否突破
+  if (newInfo.realmIndex > info.realmIndex || (newInfo.realmIndex === info.realmIndex && newInfo.subLevel > info.subLevel)) {
+    msg += ` 突破成功！已达${newInfo.realm.name}${newInfo.subLevel}层！`;
+    if (newInfo.realmIndex === 1) msg += ' 已解锁透支出价能力！';
+    if (newInfo.realmIndex === 2) msg += ' 估值精度提升10%！';
+    if (newInfo.realmIndex === 3) msg += ' 每轮15%概率额外感应线索！';
+    if (newInfo.realmIndex === 4) msg += ' 入魔后出价上限提升至80%！';
+    if (newInfo.realmIndex === 5) msg += ' 溢价补偿增加20%！';
+    if (newInfo.realmIndex === 6) msg += ' 秒杀阈值降低5%！';
+    if (newInfo.realmIndex === 7) msg += ' 渡劫飞升！全属性大幅提升！';
+    playSfx('reveal');
+    // 突破动画
+    const scene = document.querySelector('.cultivation-scene');
+    if (scene) {
+      scene.classList.add('cultivation-breakthrough');
+      setTimeout(() => scene.classList.remove('cultivation-breakthrough'), 800);
+    }
+  }
+  showAnnouncement(msg);
+  updatePlayerUI();
+  renderCultivationPanel();
+}
+
+// 修为随时间自动增长的核心逻辑
+// meta.lastMeditate 记录上次结算时间，每次调用时计算从那时到现在的修为增量
+function getXiuweiRate() {
+  // 每秒修为获取量，受境界影响
+  const info = getRealmInfo();
+  return 0.5 * (1 + info.realmIndex * 0.3); // 基础0.5修为/秒，每级境界+30%
+}
+
+// 结算时间修为：将上次结算到现在的修为加到 meta.xiuwei
+function syncTimeXiuwei() {
+  if (!meta.lastMeditate) { meta.lastMeditate = Date.now(); return 0; }
+  const now = Date.now();
+  const seconds = (now - meta.lastMeditate) / 1000;
+  if (seconds < 1) return 0;
+  const rate = getXiuweiRate();
+  const gained = Math.floor(seconds * rate);
+  if (gained > 0) {
+    meta.xiuwei += gained;
+    meta.lastMeditate = now;
+  }
+  return gained;
+}
+
+// 获取未领取的时间修为（不结算，仅显示）
+function getPendingXiuwei() {
+  if (!meta.lastMeditate) return 0;
+  const seconds = (Date.now() - meta.lastMeditate) / 1000;
+  if (seconds < 1) return 0;
+  return Math.floor(seconds * getXiuweiRate());
+}
+
+// 离线挂机收益（保留兼容，基于时间计算）
+function calcOfflineXiuwei() {
+  return getPendingXiuwei();
+}
+
+function claimOfflineXiuwei() {
+  const gained = syncTimeXiuwei();
+  if (gained <= 0) { showAnnouncement('暂无新修为可结算'); return; }
+  saveMeta();
+  showAnnouncement(`修炼结算，获得${gained}修为！`);
+  renderCultivationPanel();
+}
+
+function getAbilityLevel(id) { return meta.abilities[id] || 0; }
+
+// 应用能力效果到玩家初始属性
+function applyMetaAbilities() {
+  const lv = (id) => getAbilityLevel(id);
+  // 灵石全局化：首次游戏初始化，后续保留跨局累积的灵石
+  const baseLingshi = 3000 + lv('lingshi_boost') * 500;
+  if (meta.globalLingshi === null) {
+    player.lingshi = baseLingshi;
+  } else {
+    // 保留全局灵石，但若低于最低保障值则补齐（防止破产无法游玩）
+    player.lingshi = Math.max(meta.globalLingshi, Math.floor(baseLingshi * 0.3));
+  }
+  player.shouyuan = 200 + lv('shouyuan_boost') * 30;
+  player.gongde = 20 + lv('gongde_boost') * 10;
+  player.shenshi = 100 + lv('shenshi_boost') * 30;
+  // 修仙系统：渡劫期全属性+50%
+  const realmBonus = getRealmBonuses();
+  if (realmBonus.allStatBoost > 0) {
+    player.shouyuan = Math.floor(player.shouyuan * (1 + realmBonus.allStatBoost));
+    player.gongde = Math.floor(player.gongde * (1 + realmBonus.allStatBoost));
+    player.shenshi = Math.floor(player.shenshi * (1 + realmBonus.allStatBoost));
+  }
+  player.zhouhuo = 0;
+}
+
+// 获取入场费折扣
+function getEntryFee(baseFee) {
+  const discount = getAbilityLevel('entry_discount') * 0.1;
+  return Math.floor(baseFee * (1 - discount));
+}
+
+// 获取典当折价率
+function getPawnRatio() {
+  return PAWN_RATIO + getAbilityLevel('pawn_bonus') * 0.05;
+}
+
+// 获取试炼失败率
+function getTrialRisk() {
+  return Math.max(0, TRIAL_RISK - getAbilityLevel('trial_guard') * 0.05);
+}
+
+// ============================================================
+//  修炼坊市（商店）
+// ============================================================
+function openShop(fromStart) {
+  G.shopFromStart = fromStart;
+  renderShop();
+  document.getElementById('shopOverlay').classList.add('show');
+}
+function closeShop() {
+  document.getElementById('shopOverlay').classList.remove('show');
+}
+function renderShop() {
+  document.getElementById('shopBalance').textContent = meta.tdaoPoints;
+  const container = document.getElementById('shopItems');
+  container.innerHTML = ABILITIES.map(ab => {
+    const lv = getAbilityLevel(ab.id);
+    const maxed = lv >= ab.maxLevel;
+    const cost = maxed ? 0 : ab.costFn(lv);
+    const canAfford = meta.tdaoPoints >= cost;
+    let btnClass = 'shop-buy-btn';
+    let btnText = '';
+    let btnDisabled = false;
+    if (maxed) { btnClass += ' owned'; btnText = '已满级'; btnDisabled = true; }
+    else if (!canAfford) { btnText = `${cost}积分`; btnDisabled = true; }
+    else { btnText = `${cost}积分 升级`; }
+    return `<div class="shop-item ${maxed?'maxed':''}">
+      <div class="shop-icon">${ab.icon}</div>
+      <div class="shop-info">
+        <div class="shop-name">${ab.name}</div>
+        <div class="shop-desc">${ab.desc}</div>
+        <div class="shop-level">等级 ${lv}/${ab.maxLevel} ${lv>0?'| 当前：'+ab.effect(lv):''}</div>
+      </div>
+      <button class="${btnClass}" ${btnDisabled?'disabled':''} onclick="buyAbility('${ab.id}')">${btnText}</button>
+    </div>`;
+  }).join('');
+}
+function buyAbility(id) {
+  const ab = ABILITIES.find(a => a.id === id);
+  if (!ab) return;
+  const lv = getAbilityLevel(id);
+  if (lv >= ab.maxLevel) return;
+  const cost = ab.costFn(lv);
+  if (meta.tdaoPoints < cost) return;
+  meta.tdaoPoints -= cost;
+  meta.abilities[id] = lv + 1;
+  saveMeta();
+  renderShop();
+  playSfx('shop_buy');
+  showAnnouncement(`天道使者：「习得${ab.name}第${lv+1}层，${ab.effect(lv+1)}」`);
+}
+
+function openCultivation() {
+  renderCultivationPanel();
+  document.getElementById('cultivationOverlay').classList.add('show');
+  // 实时刷新定时器
+  if (window._cultivationTimer) clearInterval(window._cultivationTimer);
+  window._cultivationTimer = setInterval(() => {
+    if (document.getElementById('cultivationOverlay').classList.contains('show')) {
+      renderCultivationPanel();
+    } else {
+      clearInterval(window._cultivationTimer);
+      window._cultivationTimer = null;
+    }
+  }, 1000);
+}
+function closeCultivation() {
+  document.getElementById('cultivationOverlay').classList.remove('show');
+  if (window._cultivationTimer) { clearInterval(window._cultivationTimer); window._cultivationTimer = null; }
+  // 关闭时结算时间修为
+  syncTimeXiuwei();
+  saveMeta();
+}
+
+function renderCultivationPanel() {
+  const info = getRealmInfo();
+  const bonuses = getRealmBonuses();
+  const pending = getPendingXiuwei();
+  const rate = getXiuweiRate();
+  const el = document.getElementById('cultivationContent');
+  if (!el) return;
+
+  // 灵石加速选项
+  const meditateOptions = [
+    { cost:100, label:'小周天', desc:'消耗100灵石' },
+    { cost:500, label:'大周天', desc:'消耗500灵石' },
+    { cost:2000, label:'吐纳炼气', desc:'消耗2000灵石' },
+    { cost:10000, label:'闭关修炼', desc:'消耗10000灵石' },
+  ];
+
+  // 根据境界选择人物形象
+  const charAvatars = ['🧑‍🦱','🧙','🧙‍♂️','👶','✨','🔮','🌟','⚡'];
+  const charAvatar = charAvatars[info.realmIndex] || '🧙';
+  // 生成粒子效果（5个随机位置粒子）
+  let particles = '';
+  for (let i = 0; i < 5; i++) {
+    const left = 30 + Math.random() * 40;
+    const delay = Math.random() * 2;
+    particles += `<div class="cultivation-particle" style="left:${left}%;bottom:40px;animation-delay:${delay}s;"></div>`;
+  }
+
+  let html = `
+    <div class="cultivation-scene">
+      <div class="cultivation-ring"></div>
+      <div class="cultivation-aura"></div>
+      ${particles}
+      <div class="cultivation-character">${charAvatar}</div>
+      <div class="cultivation-disc"></div>
+    </div>
+    <div style="text-align:center;margin-bottom:16px;">
+      <span class="realm-icon-big">${info.realm.icon}</span>
+      <div style="font-family:'Ma Shan Zheng',serif;font-size:1.5rem;color:var(--ink-deep);">${info.realm.name} · 第${info.subLevel}层</div>
+      <div style="font-size:0.8rem;opacity:0.6;margin-top:4px;">${info.realm.desc}</div>
+    </div>
+
+    <div style="background:rgba(200,168,76,0.08);border-radius:8px;padding:10px;margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:4px;">
+        <span>修为：${meta.xiuwei + pending}</span>
+        <span>${info.realm.name}${info.subLevel}/${info.realm.subLevels}层</span>
+      </div>
+      <div style="height:8px;background:rgba(43,43,43,0.1);border-radius:4px;overflow:hidden;">
+        <div class="xiuwei-bar" style="height:100%;width:${Math.min(100, ((meta.xiuwei + pending - (info.nextXiuwei - info.realm.xiuweiPerLevel)) / info.realm.xiuweiPerLevel) * 100)}%;background:linear-gradient(90deg,var(--gold),var(--vermilion));border-radius:4px;transition:width 0.3s;"></div>
+      </div>
+      <div style="font-size:0.7rem;opacity:0.5;margin-top:2px;text-align:right;">下一层需${info.nextXiuwei - meta.xiuwei - pending}修为</div>
+    </div>
+  `;
+
+  // 自动修炼状态（主要方式）
+  html += `
+    <div style="background:linear-gradient(135deg,rgba(107,142,63,0.12),rgba(107,142,63,0.04));border:1px solid var(--jade);border-radius:8px;padding:12px;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span style="font-size:1.2rem;">🧘</span>
+        <span style="font-size:0.9rem;font-weight:bold;color:var(--jade);">自动修炼中</span>
+        <span style="font-size:0.75rem;opacity:0.6;margin-left:auto;">${rate.toFixed(1)}修为/秒</span>
+      </div>
+      <div style="font-size:0.8rem;color:var(--jade);margin-bottom:6px;">待结算修为：<strong>${pending}</strong></div>
+      <button class="btn btn-primary" style="padding:4px 16px;font-size:0.8rem;width:100%;" onclick="claimOfflineXiuwei()">结算修为</button>
+    </div>
+  `;
+
+  // 灵石加速（辅助方式）
+  html += `<div style="font-size:0.9rem;font-weight:bold;margin-bottom:8px;">💰 灵石加速</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">`;
+  meditateOptions.forEach(opt => {
+    const canAfford = player.lingshi >= opt.cost;
+    html += `<button class="comeback-option" style="padding:8px;text-align:center;${canAfford?'':'opacity:0.4;'}" ${canAfford?`onclick="meditate(${opt.cost})"`:'disabled'}>
+      <div class="co-title">${opt.label}</div>
+      <div class="co-desc">${opt.desc}</div>
+    </button>`;
+  });
+  html += `</div>`;
+
+  // 境界能力
+  html += `<div style="font-size:0.9rem;font-weight:bold;margin-bottom:8px;">⚡ 境界能力</div><div style="font-size:0.8rem;line-height:1.8;">`;
+  const abilities = [
+    { req:1, name:'透支出价', desc:'可用寿元换取灵石出价', unlocked:bonuses.canOverdraft },
+    { req:2, name:'估值精进', desc:'天机估值精度+10%', unlocked:bonuses.estimateBoost>0 },
+    { req:3, name:'元婴感应', desc:'每轮15%概率额外感应线索', unlocked:bonuses.extraClueChance>0 },
+    { req:4, name:'神通广大', desc:'入魔后出价上限提升至80%', unlocked:bonuses.bidLimitMult>0.5 },
+    { req:5, name:'天人合一', desc:'溢价补偿增加20%', unlocked:bonuses.overflowBonus>0 },
+    { req:6, name:'大乘圆满', desc:'秒杀阈值降低5%', unlocked:bonuses.killThresholdReduce>0 },
+    { req:7, name:'渡劫飞升', desc:'全属性大幅提升', unlocked:bonuses.allStatBoost>0 },
+  ];
+  abilities.forEach(ab => {
+    const realm = REALMS[ab.req];
+    html += `<div style="display:flex;align-items:center;gap:6px;${ab.unlocked?'':'opacity:0.4;'}">
+      <span>${ab.unlocked?'✅':'🔒'}</span>
+      <span style="font-weight:bold;">${ab.name}</span>
+      <span style="opacity:0.6;font-size:0.75rem;">${ab.desc}</span>
+      ${ab.unlocked?'':`<span style="font-size:0.7rem;color:var(--vermilion);margin-left:auto;">需${realm.name}</span>`}
+    </div>`;
+  });
+  html += `</div>`;
+
+  el.innerHTML = html;
+}
+
+// 计算本局获得的天道积分
+function calculateTdaoEarned() {
+  // 基础积分 = 拍得藏品数 × 20 + 累计净利润/100
+  let points = G.ownedItems.length * 20;
+  if (G.sessionProfit > 0) points += Math.floor(G.sessionProfit / 100);
+  // 惩罚：走火入魔扣分
+  points -= player.zhouhuo * 10;
+  return Math.max(0, points);
+}
+
+// ============================================================
+//  Canvas粒子背景
+// ============================================================
+const canvas = document.getElementById('spiritCanvas');
+const ctx = canvas.getContext('2d');
+let particles = [];
+function resizeCanvas() { canvas.width=window.innerWidth; canvas.height=window.innerHeight; }
+resizeCanvas(); window.addEventListener('resize',resizeCanvas);
+function initParticles() {
+  particles=[];
+  for(let i=0;i<40;i++) particles.push({
+    x:Math.random()*canvas.width,y:Math.random()*canvas.height,
+    vx:(Math.random()-0.5)*0.3,vy:-Math.random()*0.5-0.1,
+    size:Math.random()*3+1,opacity:Math.random()*0.5+0.2,
+    color:Math.random()>0.5?'200,168,76':'93,138,102',
+  });
+}
+function animateParticles() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  particles.forEach(p=>{
+    p.x+=p.vx;p.y+=p.vy;
+    if(p.y<-10){p.y=canvas.height+10;p.x=Math.random()*canvas.width;}
+    if(p.x<-10)p.x=canvas.width+10; if(p.x>canvas.width+10)p.x=-10;
+    ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
+    ctx.fillStyle=`rgba(${p.color},${p.opacity})`;
+    ctx.shadowBlur=8;ctx.shadowColor=`rgba(${p.color},0.5)`;ctx.fill();
+  });
+  ctx.shadowBlur=0;requestAnimationFrame(animateParticles);
+}
+
+// ============================================================
+//  仓库生成（核心：多件藏品组成一个仓库集）
+// ============================================================
+
+// 仙剑风格仓库命名库：按等级+价值分级
+const WAREHOUSE_NAMES = {
+  // 凡尘阁：低价值，散修/小门派
+  fanchen_low: [
+    '散修陈三遗库', '青鸾峰杂物间', '余杭镇当铺密室', '仙霞派弟子藏物',
+    '隐雾山樵夫洞府', '十里坡药庐暗格', '白河村村长遗物', '黑水镇草药店后院',
+  ],
+  fanchen_mid: [
+    '蜀山外门弟子珍藏', '蓬莱散人旧居', '昆仑杂役弟子库房', '仙灵岛仆从居所',
+    '将军冢陪葬偏室', '蛤蟆山妖修巢穴', '鬼阴山野鬼遗物', '灵山小庙地宫',
+  ],
+  fanchen_high: [
+    '蜀山派长老遗物', '琼华派外门密库', '蓬莱仙宗别院', '锁妖塔外围残室',
+    '女娲神庙偏殿', '神界南天门守库', '水魔兽巢穴深处', '天剑门掌门私库',
+  ],
+  // 灵宝殿：中价值，名门正派
+  lingbao_low: [
+    '蜀山剑宗弟子洞府', '琼华派太一宫别院', '蓬莱仙岛灵药园', '昆仑玉虚宫偏殿',
+    '仙霞派祖师堂密室', '天剑门藏经阁附室', '鬼谷派谋士居所', '苗疆巫医洞窟',
+  ],
+  lingbao_mid: [
+    '蜀山剑圣独孤宇云遗库', '琼华派玄霄修炼室', '蓬莱长老人间行宫', '昆仑掌门静修洞',
+    '锁妖塔中层封印区', '女娲后裔隐居地', '神界天兵甲库', '魔界裂隙旁遗洞',
+  ],
+  lingbao_high: [
+    '蜀山剑尊遗府', '琼华派宗主密库', '蓬莱仙尊渡劫地', '昆仑元始天尊道场残迹',
+    '锁妖塔核心封印室', '女娲神殿主祭坛', '天界凌霄宝库偏殿', '魔尊重楼行宫',
+  ],
+  // 天机阁：高价值，传说级
+  tianji_low: [
+    '蜀山太清真人遗府', '琼华派宗主太虚宫', '蓬莱仙帝别府', '昆仑玉清元始殿',
+    '锁妖塔深层禁地', '女娲神殿圣域', '天界太上老君丹房', '魔界魔尊宝库',
+  ],
+  tianji_mid: [
+    '蜀山剑神归元洞', '琼华派九天玄女殿', '蓬莱上古仙尊遗府', '昆仑鸿钧道祖讲道台',
+    '盘古开天遗迹', '女娲补天炉', '天界瑶池仙库', '魔界深渊魔宫',
+  ],
+  tianji_high: [
+    '蜀山万剑归宗圣地', '琼华派飞升台密库', '蓬莱混沌仙府', '昆仑紫霄宫遗宝',
+    '上古龙族龙宫', '女娲造人圣地', '天界造化仙库', '魔界万魔殿',
+  ],
+};
+
+// 根据等级和总价值选择仓库名
+function pickWarehouseName(tierName, totalValue) {
+  const tierKey = tierName === '凡尘阁' ? 'fanchen' : tierName === '灵宝殿' ? 'lingbao' : 'tianji';
+  const config = TIER_CONFIGS[tierName];
+  const ratio = (totalValue - config.valueMin) / (config.valueMax - config.valueMin);
+  let valueKey;
+  if (ratio < 0.33) valueKey = 'low';
+  else if (ratio < 0.66) valueKey = 'mid';
+  else valueKey = 'high';
+  const pool = WAREHOUSE_NAMES[`${tierKey}_${valueKey}`];
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function generateWarehouse(tierName) {
+  const config = TIER_CONFIGS[tierName];
+  const itemCount = config.itemCountRange[0] + Math.floor(Math.random()*(config.itemCountRange[1]-config.itemCountRange[0]+1));
+  const items = [];
+  let totalValue = 0;
+
+  // 加权随机选择品质
+  const totalWeight = QUALITIES.reduce((s,q)=>s+q.weight,0);
+
+  for (let i=0; i<itemCount; i++) {
+    let rand = Math.random()*totalWeight;
+    let quality;
+    for (const q of QUALITIES) {
+      rand -= q.weight;
+      if (rand <= 0) { quality = q; break; }
+    }
+
+    // 随机选择物品模板
+    const template = ITEM_TEMPLATES[Math.floor(Math.random()*ITEM_TEMPLATES.length)];
+    const name = template.names[Math.floor(Math.random()*template.names.length)];
+
+    // 计算单品价值（基于等级范围和品质倍率）
+    const baseUnitValue = (config.valueMin / itemCount) * (0.5 + Math.random());
+    const itemValue = Math.floor(baseUnitValue * quality.valueMult * (0.8 + Math.random()*0.4));
+
+    items.push({
+      id:`w${G.itemNum}_i${i}`,
+      name, type:template.type, icon:template.icon,
+      quality:quality.key, qualityName:quality.name, colorClass:quality.color,
+      value:itemValue,
+      era: template.type==='法宝'?'上古':template.type==='功法'?'中古':'近古',
+      revealed:false, // 是否已揭晓
+      qualityRevealed:false, // 是否已揭示品质
+    });
+    totalValue += itemValue;
+  }
+
+  // 仓库底价 = 总价值的25%~35%
+  const basePrice = Math.floor(totalValue * (0.25 + Math.random()*0.1));
+
+  // 仙剑风格命名
+  const whName = pickWarehouseName(tierName, totalValue);
+
+  return {
+    id:`warehouse_${G.itemNum}`,
+    name:whName,
+    items, totalValue, basePrice,
+    itemCount:items.length,
+  };
+}
+
+// ============================================================
+//  线索生成（针对仓库集，逐轮随机揭示）
+//  致敬竞拍之王：每轮从线索池中随机抽取1-2条，种类丰富
+// ============================================================
+function generateWarehouseClues(warehouse) {
+  const items = warehouse.items;
+
+  // —— 统计数据 ——
+  const qualityCount = {};
+  items.forEach(i => { qualityCount[i.quality] = (qualityCount[i.quality]||0)+1; });
+  const typeCount = {};
+  items.forEach(i => { typeCount[i.type] = (typeCount[i.type]||0)+1; });
+  const eraCount = {};
+  items.forEach(i => { eraCount[i.era] = (eraCount[i.era]||0)+1; });
+
+  const values = items.map(i => i.value).sort((a,b) => a - b);
+  const maxVal = values[values.length - 1];
+  const minVal = values[0];
+  const avgVal = Math.floor(values.reduce((s,v)=>s+v,0) / values.length);
+  const medianVal = values[Math.floor(values.length / 2)];
+
+  const notableItems = items.filter(i => ['blue','purple','gold','red'].includes(i.quality));
+  const legendaryItems = items.filter(i => i.quality === 'red');
+  const epicItems = items.filter(i => i.quality === 'gold');
+  const rarePlusItems = items.filter(i => ['purple','gold','red'].includes(i.quality));
+  const maxItem = items.find(i => i.value === maxVal);
+  const minItem = items.find(i => i.value === minVal);
+
+  // —— 线索池：每个生成器返回一个线索对象或null（null表示该线索不适用） ——
+  const cluePool = [
+    // 1. 藏品总数 + 品质分布
+    () => {
+      const qParts = QUALITIES.filter(q=>qualityCount[q.key]>0).map(q=>`${qualityCount[q.key]}件${q.name}`).join('、');
+      return { type:'count_quality',
+        content:`仓库共${warehouse.itemCount}件藏品，品质分布：${qParts}`,
+        data:{ count:warehouse.itemCount, qualityCount } };
+    },
+    // 2. 藏品种类分布
+    () => {
+      const tParts = Object.entries(typeCount).map(([t,c])=>`${c}件${t}`).join('、');
+      return { type:'types', content:`藏品种类：${tParts}`, data:{ typeCount } };
+    },
+    // 3. 珍品名称（蓝品以上）
+    () => {
+      if (notableItems.length === 0) return { type:'notable_names', content:`仓库内多为凡品良品，未见珍品`, data:{ notableItemIds:[] } };
+      return { type:'notable_names',
+        content:`探得珍品：${notableItems.map(i=>i.name).join('、')}`,
+        data:{ notableItemIds:notableItems.map(i=>i.id) } };
+    },
+    // 4. 仓库总价值区间
+    () => {
+      const vrMin = Math.floor(warehouse.totalValue*0.7);
+      const vrMax = Math.floor(warehouse.totalValue*1.3);
+      return { type:'value_range', content:`仓库总价值估算：约${vrMin}～${vrMax}灵石`, data:{ min:vrMin, max:vrMax } };
+    },
+    // 5. 最贵藏品
+    () => {
+      return { type:'max_item', content:`最贵藏品价值约${maxVal}灵石（${maxItem.qualityName}）`, data:{ maxVal, maxItemId:maxItem.id } };
+    },
+    // 6. 最廉藏品
+    () => {
+      return { type:'min_item', content:`最廉藏品价值约${minVal}灵石（${minItem.qualityName}）`, data:{ minVal, minItemId:minItem.id } };
+    },
+    // 7. 藏品平均价值
+    () => {
+      return { type:'avg_value', content:`藏品平均价值约${avgVal}灵石`, data:{ avgVal } };
+    },
+    // 8. 年代分布
+    () => {
+      const eParts = Object.entries(eraCount).map(([e,c])=>`${c}件${e}`).join('、');
+      return { type:'era_dist', content:`藏品年代：${eParts}`, data:{ eraCount } };
+    },
+    // 9. 随机揭示1件藏品的完整信息
+    () => {
+      const idx = Math.floor(Math.random() * items.length);
+      const item = items[idx];
+      return { type:'reveal_one',
+        content:`天机窥探：第${idx+1}件为${item.qualityName}·${item.name}（约${item.value}灵石）`,
+        data:{ revealIds:[item.id] } };
+    },
+    // 10. 随机揭示2件藏品的品质（不揭示名称）
+    () => {
+      const shuffled = [...items].sort(() => Math.random() - 0.5);
+      const picked = shuffled.slice(0, Math.min(2, shuffled.length));
+      const parts = picked.map((item, i) => {
+        const idx = items.indexOf(item);
+        return `第${idx+1}件为${item.qualityName}`;
+      }).join('，');
+      return { type:'reveal_quality',
+        content:`天机探查：${parts}`,
+        data:{ revealQualityIds: picked.map(i => i.id) } };
+    },
+    // 11. 是否存在传说级藏品
+    () => {
+      if (legendaryItems.length === 0) return { type:'legendary_check', content:`天机感应：仓库内未见传说级藏品`, data:{ hasLegendary:false } };
+      return { type:'legendary_check', content:`天机感应：仓库内存在${legendaryItems.length}件传说级藏品！`, data:{ hasLegendary:true, count:legendaryItems.length } };
+    },
+    // 12. 史诗级藏品数量
+    () => {
+      if (epicItems.length === 0) return null;
+      return { type:'epic_check', content:`探得${epicItems.length}件史诗级藏品`, data:{ epicCount:epicItems.length } };
+    },
+    // 13. 稀有以上藏品数量
+    () => {
+      if (rarePlusItems.length === 0) return { type:'rare_count', content:`仓库内无稀有以上藏品`, data:{ rareCount:0 } };
+      return { type:'rare_count', content:`稀有以上藏品共${rarePlusItems.length}件`, data:{ rareCount:rarePlusItems.length } };
+    },
+    // 14. 藏品价值中位数
+    () => {
+      return { type:'median_value', content:`藏品价值中位数约${medianVal}灵石`, data:{ medianVal } };
+    },
+    // 15. 随机某品质的具体数量
+    () => {
+      const available = QUALITIES.filter(q => qualityCount[q.key] > 0);
+      const q = available[Math.floor(Math.random() * available.length)];
+      return { type:'quality_count', content:`${q.name}藏品有${qualityCount[q.key]}件`, data:{ quality:q.key, count:qualityCount[q.key] } };
+    },
+    // 16. 随机某类型的具体数量
+    () => {
+      const types = Object.keys(typeCount);
+      const t = types[Math.floor(Math.random() * types.length)];
+      return { type:'type_count', content:`${t}类藏品有${typeCount[t]}件`, data:{ type:t, count:typeCount[t] } };
+    },
+    // 17. 总价值模糊提示（量级）
+    () => {
+      let level;
+      if (warehouse.totalValue < 1000) level = '数百灵石级别';
+      else if (warehouse.totalValue < 5000) level = '数千灵石级别';
+      else if (warehouse.totalValue < 20000) level = '万余灵石级别';
+      else if (warehouse.totalValue < 50000) level = '数万灵石级别';
+      else level = '十万灵石以上';
+      return { type:'value_level', content:`仓库总价值量级：${level}`, data:{ level } };
+    },
+    // 18. 随机揭示某件藏品是否为某品质
+    () => {
+      const idx = Math.floor(Math.random() * items.length);
+      const item = items[idx];
+      return { type:'item_quality_hint',
+        content:`第${idx+1}件藏品散发着${item.qualityName}的光芒`,
+        data:{ itemId:item.id, quality:item.quality } };
+    },
+  ];
+
+  // 生成所有可用线索，过滤掉null
+  const allClues = cluePool.map(gen => gen()).filter(c => c !== null);
+
+  // 随机打乱（Fisher-Yates）
+  for (let i = allClues.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [allClues[i], allClues[j]] = [allClues[j], allClues[i]];
+  }
+
+  // 分配到4轮：每轮1-2条线索（40%概率出2条）
+  const clues = [];
+  let idx = 0;
+  for (let round = 1; round <= 4; round++) {
+    const count = (Math.random() < 0.4 && idx + 1 < allClues.length) ? 2 : 1;
+    for (let j = 0; j < count && idx < allClues.length; j++) {
+      const clue = allClues[idx++];
+      clue.round = round;
+      clues.push(clue);
+    }
+  }
+
+  return clues;
+}
+
+// ============================================================
+//  流程控制
+// ============================================================
+function enterTierSelect() {
+  loadMeta(); // 加载存档
+  applyMetaAbilities(); // 应用局外养成能力
+  // 读取自定义道号
+  const nameInput = document.getElementById('playerNameInput');
+  const customName = nameInput ? nameInput.value.trim() : '';
+  if (customName) { player.name = customName; document.getElementById('playerName').textContent = customName; }
+  document.getElementById('startOverlay').classList.add('hidden');
+  document.getElementById('tierSelectOverlay').classList.add('show');
+  updateTierCardLocks();
+}
+function updateTierCardLocks() {
+  document.querySelectorAll('.tier-card').forEach(c => {
+    const tierName = c.querySelector('.tier-name').textContent.trim();
+    const config = TIER_CONFIGS[tierName];
+    if (!config) return;
+    const actualFee = getEntryFee(config.entryFee);
+    c.classList.toggle('locked', player.lingshi < actualFee);
+    // 更新显示的入场费为折扣后价格
+    const feeEl = c.querySelector('.tier-fee');
+    if (feeEl) feeEl.textContent = `入场费：${actualFee} 灵石`;
+  });
+}
+function selectTier(tierName) {
+  const config = TIER_CONFIGS[tierName];
+  const actualFee = getEntryFee(config.entryFee);
+  if (player.lingshi < actualFee) { showAnnouncement(`灵石不足，需${actualFee}灵石入场费`); return; }
+  player.lingshi -= actualFee;
+  G.tier = tierName;
+  generateNPCs(config);
+  document.getElementById('tierSelectOverlay').classList.remove('show');
+  document.getElementById('mainContainer').style.display='grid';
+  document.getElementById('tierBadge').textContent = tierName;
+  document.getElementById('tierBadge').className = 'tier-badge ' +
+    (tierName==='凡尘阁'?'fanchen':tierName==='灵宝殿'?'lingbao':'tianji');
+  initParticles(); animateParticles();
+  updatePlayerUI(); renderNPCs();
+  announce(`天道使者：「道友已缴纳${actualFee}灵石入场费，踏入${tierName}。此番所竞者乃洞府仓库，内含多件藏品，价高者得全部。」`);
+  setTimeout(()=>startItem(),1500);
+}
+// 仙剑奇侠传人物NPC池
+const NPC_POOL = [
+  // 蜀山系 — 正道修士，偏保守稳健
+  { name:'独孤剑圣', sect:'蜀山派', icon:'🗡️', p:{aggression:0.5,prudence:0.8,greed:0.3}, strategy:'conservative', desc:'剑道宗师，稳如泰山' },
+  { name:'李逍遥', sect:'蜀山派', icon:'🍶', p:{aggression:0.7,prudence:0.4,greed:0.6}, strategy:'adaptive', desc:'酒剑仙传人，随机应变' },
+  { name:'酒剑仙', sect:'蜀山派', icon:'🍺', p:{aggression:0.9,prudence:0.2,greed:0.5}, strategy:'aggressive', desc:'嗜酒如命，豪赌成性' },
+  { name:'徐长卿', sect:'蜀山派', icon:'🌿', p:{aggression:0.3,prudence:0.9,greed:0.2}, strategy:'conservative', desc:'蜀山长老，深谋远虑' },
+  // 女娲系 — 灵力深厚，偏适应型
+  { name:'赵灵儿', sect:'女娲族', icon:'🌸', p:{aggression:0.5,prudence:0.7,greed:0.4}, strategy:'adaptive', desc:'女娲后人，灵力天成' },
+  { name:'林月如', sect:'林家堡', icon:'🗡️', p:{aggression:0.85,prudence:0.3,greed:0.7}, strategy:'aggressive', desc:'刁蛮大小姐，争强好胜' },
+  { name:'阿奴', sect:'苗疆', icon:'蛊', p:{aggression:0.6,prudence:0.5,greed:0.8}, strategy:'fishing', desc:'苗疆圣女，诡谲多变' },
+  // 魔界系 — 激进好战
+  { name:'重楼', sect:'魔界', icon:'🔥', p:{aggression:0.95,prudence:0.1,greed:0.9}, strategy:'aggressive', desc:'魔界至尊，唯我独尊' },
+  { name:'邪剑仙', sect:'魔界', icon:'😈', p:{aggression:0.8,prudence:0.4,greed:0.85}, strategy:'fishing', desc:'邪修大能，诡计多端' },
+  { name:'魔尊重楼', sect:'魔界', icon:'⚔️', p:{aggression:0.9,prudence:0.3,greed:0.6}, strategy:'aggressive', desc:'好战魔尊，以力破巧' },
+  // 鬼谷系 — 谋略型
+  { name:'鬼谷子', sect:'鬼谷派', icon:'🎭', p:{aggression:0.6,prudence:0.9,greed:0.7}, strategy:'fishing', desc:'纵横家祖，以谋取胜' },
+  { name:'苏媚', sect:'鬼谷派', icon:'🦊', p:{aggression:0.7,prudence:0.6,greed:0.5}, strategy:'adaptive', desc:'狐妖后人，聪慧狡黠' },
+  // 蓬莱/昆仑系 — 修仙名门
+  { name:'蓬莱散人', sect:'蓬莱派', icon:'🌊', p:{aggression:0.4,prudence:0.8,greed:0.4}, strategy:'conservative', desc:'蓬莱仙长，清静无为' },
+  { name:'昆仑长老', sect:'昆仑派', icon:'🏔️', p:{aggression:0.65,prudence:0.5,greed:0.6}, strategy:'adaptive', desc:'昆仑宿老，经验丰富' },
+  { name:'沈欺霜', sect:'仙霞派', icon:'❄️', p:{aggression:0.55,prudence:0.75,greed:0.35}, strategy:'conservative', desc:'仙霞五美，冰清玉洁' },
+  { name:'王小虎', sect:'武林盟', icon:'👊', p:{aggression:0.75,prudence:0.4,greed:0.5}, strategy:'aggressive', desc:'热血少年，勇往直前' },
+  { name:'唐雪见', sect:'唐门', icon:'💊', p:{aggression:0.6,prudence:0.65,greed:0.55}, strategy:'adaptive', desc:'唐门大小姐，精打细算' },
+  { name:'紫萱', sect:'女娲族', icon:'💜', p:{aggression:0.45,prudence:0.85,greed:0.3}, strategy:'conservative', desc:'女娲长老，慈悲为怀' },
+];
+function generateNPCs(config) {
+  // 从角色池中随机抽取不重复的NPC
+  const pool = [...NPC_POOL];
+  npcs = [];
+  for (let i = 0; i < config.aiCount && pool.length > 0; i++) {
+    const idx = Math.floor(Math.random() * pool.length);
+    const char = pool.splice(idx, 1)[0];
+    const ls = config.aiLingshiRange[0] + Math.floor(Math.random() * (config.aiLingshiRange[1] - config.aiLingshiRange[0]));
+    npcs.push({
+      id: 'ai' + (i + 1),
+      name: char.name,
+      sect: char.sect,
+      icon: char.icon,
+      desc: char.desc,
+      isPlayer: false,
+      lingshi: ls,
+      shouyuan: 150 + Math.floor(Math.random() * 80),
+      gongde: 5 + Math.floor(Math.random() * 25),
+      yezhang: 10 + Math.floor(Math.random() * 30),
+      shenshi: 80 + Math.floor(Math.random() * 40),
+      zhouhuo: 0,
+      personality: char.p,
+      strategyType: char.strategy,
+    });
+  }
+}
+
+// ============================================================
+//  开始一个仓库的竞拍
+// ============================================================
+function startItem() {
+  if (G.itemNum > G.totalItems) { endGame(); return; }
+
+  // P0-4: 流拍池买断提示
+  if (G.flowpoolItems.length > 0 && player.lingshi > 0) {
+    const poolItem = G.flowpoolItems[0];
+    if (player.lingshi >= poolItem.buyoutPrice) {
+      showFlowpoolBuyout(poolItem);
+    }
+  }
+
+  // 生成仓库
+  G.currentWarehouse = generateWarehouse(G.tier);
+  G.currentRound = 0;
+  G.roundBids = {};
+  G.allClues = [];
+  G.killPriceTriggered = false;
+  G.aiSubmittedThisRound = false;
+  G.playerPassedThisRound = false;
+  G.aiPassedThisRound = [];
+  G.lastRoundBids = [];
+  G.bestBids = {}; // P0-1: 重置跨轮最高出价
+  G.pendingEvent = null; // P1-4: 重置随机事件
+
+  // P1-4: 随机风险事件（10%概率）— 同步应用，在线索生成之前
+  if (Math.random() < 0.1 && G.itemNum > 1) {
+    triggerRandomEvent();
+  }
+
+  // 生成线索池（基于事件后的仓库价值）
+  G.warehouseClues = generateWarehouseClues(G.currentWarehouse);
+
+  // P1-3: 连击奖励应用
+  if (G.comboBonusClue) {
+    const unassignedClue = G.warehouseClues.find(c => c.round > 1);
+    if (unassignedClue) unassignedClue.round = 1;
+    G.comboBonusClue = false;
+  }
+  if (G.comboBonusHalfPrice) {
+    G.currentWarehouse.basePrice = Math.floor(G.currentWarehouse.basePrice * 0.5);
+    G.comboBonusHalfPrice = false;
+  }
+
+  // P1-5: 每个仓库重置技能
+  G.skillsUsed = {};
+  G.lockedBid = false;
+  G.dualBid = false;
+  G.skillTokens = 3; // 每个仓库3个天道令
+
+  // 天机眼能力：第1轮额外多看线索
+  const extraClueLv = getAbilityLevel('extra_clue');
+  if (extraClueLv > 0) {
+    // 从线索池中找到未分配的线索，提前释放到第1轮
+    const unassigned = G.warehouseClues.filter(c => c.round > 1);
+    for (let i = 0; i < extraClueLv && i < unassigned.length; i++) {
+      unassigned[i].round = 1;
+    }
+  }
+
+  // 渲染仓库初始状态（全部未知）
+  document.getElementById('warehouseTitle').innerHTML = `${G.currentWarehouse.name} <span class="item-count-badge">📦 ${G.currentWarehouse.itemCount}件</span>`;
+  document.getElementById('warehouseDesc').textContent = `此仓库来历神秘，内含${G.currentWarehouse.itemCount}件藏品，需逐轮探查方知全貌`;
+  document.getElementById('basePrice').textContent = '💰 ' + G.currentWarehouse.basePrice;
+  document.getElementById('itemNum').textContent = G.itemNum;
+  document.getElementById('bidHint').textContent = '--';
+  document.getElementById('myLastBid').textContent = '--';
+  document.getElementById('cluesList').innerHTML = '<span style="opacity:0.5;">等待第一轮线索释放...</span>';
+  document.getElementById('bidLog').innerHTML = '<div style="text-align:center;opacity:0.4;padding:8px;">等待竞价开始...</div>';
+  document.getElementById('comebackBtn').style.display = 'none';
+
+  renderWarehouseGrid();
+  renderRoundProgress();
+
+  announce(`天道使者：「第${G.itemNum}个仓库已呈于台前，内含${G.currentWarehouse.itemCount}件藏品，底价${G.currentWarehouse.basePrice}灵石。共${TOTAL_ROUNDS}轮暗拍，线索逐轮揭露，出价针对整个仓库。」`);
+
+  setTimeout(()=>advanceRound(), 2000);
+}
+
+// ============================================================
+//  渲染仓库网格
+// ============================================================
+function renderWarehouseGrid() {
+  const grid = document.getElementById('warehouseGrid');
+  const items = G.currentWarehouse.items;
+  grid.innerHTML = items.map((item, i) => {
+    if (item.revealed) {
+      return `<div class="warehouse-cell revealed ${item.colorClass}">
+        <div class="cell-icon">${item.icon}</div>
+        <div class="cell-name">${item.name}</div>
+        <div class="cell-value">${item.value}灵石</div>
+      </div>`;
+    } else {
+      // 部分揭示：知道品质但不知具体物品
+      if (item.qualityRevealed) {
+        return `<div class="warehouse-cell revealed ${item.colorClass}">
+          <div class="cell-icon">❓</div>
+          <div class="cell-name">${item.qualityName}</div>
+        </div>`;
+      }
+      return `<div class="warehouse-cell unknown"></div>`;
+    }
+  }).join('');
+
+  // 统计已揭示的品质
+  renderWarehouseStats();
+}
+
+function renderWarehouseStats() {
+  const stats = document.getElementById('warehouseStats');
+  const items = G.currentWarehouse.items;
+
+  // 修复：仅当释放了 count_quality 线索时才显示完整品质分布
+  const hasCountQualityClue = G.allClues.some(c => c.type === 'count_quality');
+  if (!hasCountQualityClue) { stats.innerHTML = ''; return; }
+
+  const qualityCount = {};
+  items.forEach(i => { qualityCount[i.quality] = (qualityCount[i.quality]||0)+1; });
+
+  let html = '';
+  for (const q of QUALITIES) {
+    if (qualityCount[q.key]) {
+      html += `<span class="stat-pill"><span class="stat-q ${q.color}"></span>${q.name}×${qualityCount[q.key]}</span>`;
+    }
+  }
+  stats.innerHTML = html;
+}
+
+// ============================================================
+//  推进轮次
+// ============================================================
+function advanceRound() {
+  G.currentRound++;
+  if (G.currentRound > TOTAL_ROUNDS) { settleMultiRound(); return; }
+
+  // 释放本轮线索
+  const newClues = G.warehouseClues.filter(c => c.round === G.currentRound);
+  G.allClues.push(...newClues);
+
+  // P1修复：天机泄露事件——第1轮额外释放线索
+  if (G.eventExtraClues > 0 && G.currentRound === 1) {
+    const extraClues = G.warehouseClues.filter(c => c.round > 1).slice(0, G.eventExtraClues);
+    extraClues.forEach(c => c.round = 1);
+    G.allClues.push(...extraClues);
+    newClues.push(...extraClues);
+    G.eventExtraClues = 0;
+  }
+
+  // 根据线索揭示仓库内容
+  applyClueReveals(newClues);
+
+  // P2: 神识加成——高神识有概率额外揭示藏品信息
+  if (player.shenshi >= 120 && Math.random() < 0.3 && G.currentRound < TOTAL_ROUNDS) {
+    const hiddenItems = G.currentWarehouse.items.filter(item => !item.revealed);
+    if (hiddenItems.length > 0) {
+      const target = hiddenItems[Math.floor(Math.random() * hiddenItems.length)];
+      target.revealed = true;
+      announce(`天道使者：「神识通明！额外感应到一件${target.qualityName}藏品——${target.name}。」`);
+    }
+  }
+
+  // 修仙系统：元婴期额外感应线索
+  const realmBonus = getRealmBonuses();
+  if (realmBonus.extraClueChance > 0 && Math.random() < realmBonus.extraClueChance && G.currentRound < TOTAL_ROUNDS) {
+    const hiddenItems = G.currentWarehouse.items.filter(item => !item.revealed);
+    if (hiddenItems.length > 0) {
+      const target = hiddenItems[Math.floor(Math.random() * hiddenItems.length)];
+      target.revealed = true;
+      announce(`天道使者：「元婴出窍！额外感应到一件${target.qualityName}藏品——${target.name}。」`);
+    }
+  }
+
+  renderWarehouseGrid();
+  renderClues();
+  renderRoundProgress();
+
+  // 秒杀价提示
+  const threshold = KILL_THRESHOLDS[G.currentRound-1];
+  const banner = document.getElementById('killPriceBanner');
+  if (threshold > 0) {
+    banner.classList.add('show');
+    const killInsight = getAbilityLevel('kill_insight') > 0;
+    if (killInsight && G.lastRoundBids.length > 0) {
+      const lastMax = Math.max(...G.lastRoundBids.map(b=>b.amount));
+      const killAmount = Math.floor(lastMax * (1 + threshold) * (0.95 + Math.random()*0.1));
+      document.getElementById('killThreshold').textContent = `秒杀阈值：出价≥${killAmount}灵石（第二名${lastMax}×${(1+threshold).toFixed(1)}）即可终结`;
+    } else {
+      document.getElementById('killThreshold').textContent = `出价高于第二名 ${Math.round(threshold*100)}% 即可秒杀终结`;
+    }
+  } else { banner.classList.remove('show'); }
+
+  // 播报
+  if (newClues.length > 0) {
+    announce(`天道使者：「第${G.currentRound}轮竞拍开始。天机显现——${newClues.map(c=>c.content).join('；')}」`);
+    playSfx('reveal');
+  } else {
+    // 第5轮：全部揭示
+    G.currentWarehouse.items.forEach(i => { i.revealed = true; });
+    renderWarehouseGrid();
+    announce(`天道使者：「第${G.currentRound}轮（最终轮）竞拍开始，仓库内容全部透明！价高者得！」`);
+    playSfx('round_start');
+  }
+
+  document.getElementById('roundNum').textContent = G.currentRound;
+  G.aiSubmittedThisRound = false;
+  G.playerPassedThisRound = false;
+  G.aiPassedThisRound = [];
+
+  document.getElementById('bidBtn').disabled = false;
+  document.getElementById('bidInput').disabled = false;
+  document.getElementById('passBtn').disabled = false;
+  document.getElementById('overdraftCheck').checked = false; // 重置透支复选框
+  document.getElementById('waitHint').style.display = 'none';
+  document.getElementById('waitHint').textContent = '已提交出价，等待其他道友...';
+
+  // 渲染智能出价建议
+  renderBidSuggestions();
+  // 渲染估值提示（价值感知能力）
+  renderEstimateHint();
+  // P1-5: 渲染技能栏
+  renderSkillBar();
+  // P1-3: 渲染连击指示器
+  const comboEl = document.getElementById('comboIndicator');
+  if (G.comboStreak >= 2) {
+    comboEl.style.display = 'block';
+    comboEl.innerHTML = `<span class="combo-indicator">${G.comboType==='bargain'?'捡漏':'中标'}连击 ×${G.comboStreak}</span>`;
+  } else { comboEl.style.display = 'none'; }
+
+  checkComeback();
+
+  // P0-2: AI出价延迟优化为1-2.5秒
+  setTimeout(() => {
+    if (G.currentRound >= 1 && G.currentRound <= TOTAL_ROUNDS && !G.killPriceTriggered) {
+      driveAIBids();
+    }
+  }, 1000 + Math.random()*1500);
+}
+
+// 根据线索揭示仓库内容（支持所有线索类型）
+function applyClueReveals(clues) {
+  for (const clue of clues) {
+    switch (clue.type) {
+      case 'count_quality':
+        // 揭示所有品质（但不揭示具体物品名称）
+        G.currentWarehouse.items.forEach(item => { item.qualityRevealed = true; });
+        break;
+      case 'notable_names':
+        // 揭示珍品名称
+        if (clue.data.notableItemIds) {
+          G.currentWarehouse.items.forEach(item => {
+            if (clue.data.notableItemIds.includes(item.id)) { item.revealed = true; }
+          });
+        }
+        break;
+      case 'reveal_one':
+        // 随机揭示1件藏品的完整信息
+        if (clue.data.revealIds) {
+          G.currentWarehouse.items.forEach(item => {
+            if (clue.data.revealIds.includes(item.id)) { item.revealed = true; }
+          });
+        }
+        break;
+      case 'reveal_quality':
+        // 随机揭示2件藏品的品质
+        if (clue.data.revealQualityIds) {
+          G.currentWarehouse.items.forEach(item => {
+            if (clue.data.revealQualityIds.includes(item.id)) { item.qualityRevealed = true; }
+          });
+        }
+        break;
+      case 'item_quality_hint':
+        // 揭示某件藏品的品质
+        if (clue.data.itemId) {
+          const item = G.currentWarehouse.items.find(i => i.id === clue.data.itemId);
+          if (item) item.qualityRevealed = true;
+        }
+        break;
+      case 'max_item':
+        // 揭示最贵藏品的品质
+        if (clue.data.maxItemId) {
+          const item = G.currentWarehouse.items.find(i => i.id === clue.data.maxItemId);
+          if (item) item.qualityRevealed = true;
+        }
+        break;
+      case 'min_item':
+        // 揭示最廉藏品的品质
+        if (clue.data.minItemId) {
+          const item = G.currentWarehouse.items.find(i => i.id === clue.data.minItemId);
+          if (item) item.qualityRevealed = true;
+        }
+        break;
+      // 其他线索类型（value_range, avg_value, era_dist, legendary_check等）
+      // 仅提供文字信息，不改变仓库网格的揭示状态
+      break;
+    }
+  }
+  // 第5轮在advanceRound中直接全部揭示
+}
+
+function renderRoundProgress() {
+  const container = document.getElementById('roundProgress');
+  container.innerHTML = '';
+  // 修仙系统：大乘期秒杀阈值降低5%
+  const realmBonus = getRealmBonuses();
+  const killThresholdReduce = realmBonus.killThresholdReduce;
+  const killThresholds = KILL_THRESHOLDS.map(t => t > 0 ? Math.max(0.05, t - killThresholdReduce) : t);
+  for (let i=1; i<=TOTAL_ROUNDS; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'round-dot';
+    if (i < G.currentRound) dot.classList.add('done');
+    if (i === G.currentRound) dot.classList.add('current');
+    dot.textContent = i < G.currentRound ? '✓' : i;
+    const label = document.createElement('div');
+    label.className = 'kill-label';
+    label.textContent = killThresholds[i-1] > 0 ? `秒杀${Math.round(killThresholds[i-1]*100)}%` : '最终';
+    dot.appendChild(label);
+    container.appendChild(dot);
+  }
+}
+
+function renderClues() {
+  const list = document.getElementById('cluesList');
+  if (G.allClues.length === 0) { list.innerHTML = '<span style="opacity:0.5;">等待第一轮线索释放...</span>'; return; }
+  list.innerHTML = G.allClues.map((c, i) =>
+    `<div class="clue-item${i === G.allClues.length - 1 ? ' clue-item-new' : ''}"><span class="clue-round">[第${c.round}轮]</span>${c.content}</div>`
+  ).join('');
+}
+
+// ============================================================
+//  出价逻辑
+// ============================================================
+// ============================================================
+//  智能出价建议系统
+// ============================================================
+
+// 根据当前轮次和已释放线索估算仓库价值范围
+function estimateWarehouseValue() {
+  const wh = G.currentWarehouse;
+  if (!wh) return { min:0, max:0, avg:0 };
+
+  let minEst = wh.basePrice * 2;
+  let maxEst = wh.basePrice * 5;
+
+  for (const clue of G.allClues) {
+    switch (clue.type) {
+      case 'count_quality': {
+        const qc = clue.data.qualityCount;
+        if (qc) {
+          if (qc.red) { minEst *= 1.4; maxEst *= 1.8; }
+          if (qc.gold) { minEst *= 1.2; maxEst *= 1.4; }
+          if (qc.purple) { minEst *= 1.1; maxEst *= 1.2; }
+        }
+        break;
+      }
+      case 'value_range':
+        minEst = clue.data.min;
+        maxEst = clue.data.max;
+        break;
+      case 'value_level':
+        if (clue.data.level) {
+          if (clue.data.level.includes('十万')) { minEst = 80000; maxEst = 150000; }
+          else if (clue.data.level.includes('数万')) { minEst = 20000; maxEst = 60000; }
+          else if (clue.data.level.includes('万余')) { minEst = 8000; maxEst = 25000; }
+          else if (clue.data.level.includes('数千')) { minEst = 2000; maxEst = 8000; }
+          else { minEst = 300; maxEst = 1500; }
+        }
+        break;
+      case 'legendary_check':
+        if (clue.data.hasLegendary) { minEst *= 1.6; maxEst *= 2.0; }
+        break;
+      case 'epic_check':
+        if (clue.data.epicCount > 0) { minEst *= 1.2; maxEst *= 1.3; }
+        break;
+      case 'max_item':
+        if (clue.data.maxVal) {
+          minEst = Math.max(minEst, clue.data.maxVal * wh.itemCount * 0.4);
+          maxEst = Math.max(maxEst, clue.data.maxVal * wh.itemCount * 0.7);
+        }
+        break;
+      case 'avg_value':
+        if (clue.data.avgVal) {
+          minEst = Math.max(minEst, clue.data.avgVal * wh.itemCount * 0.8);
+          maxEst = Math.max(maxEst, clue.data.avgVal * wh.itemCount * 1.2);
+        }
+        break;
+      case 'median_value':
+        if (clue.data.medianVal) {
+          minEst = Math.max(minEst, clue.data.medianVal * wh.itemCount * 0.7);
+          maxEst = Math.max(maxEst, clue.data.medianVal * wh.itemCount * 1.1);
+        }
+        break;
+    }
+  }
+
+  // 第5轮全部揭示后，估值更精确
+  if (G.currentRound === TOTAL_ROUNDS) {
+    minEst = wh.totalValue * 0.9;
+    maxEst = wh.totalValue * 1.1;
+  }
+
+  // P2-2: 神识(shenshi)影响估值精度
+  // 神识≥120：误差±15%（高精度）；80-119：±25%（中精度）；<80：±35%（低精度）
+  let precision, errorMargin;
+  if (player.shenshi >= 120) { precision = 'high'; errorMargin = 0.15; }
+  else if (player.shenshi >= 80) { precision = 'mid'; errorMargin = 0.25; }
+  else { precision = 'low'; errorMargin = 0.35; }
+  // 修仙系统：金丹期估值精度额外+10%
+  const realmBonus = getRealmBonuses();
+  if (realmBonus.estimateBoost > 0) {
+    errorMargin = Math.max(0.05, errorMargin - realmBonus.estimateBoost);
+  }
+  // 最终轮已揭示真实价值，不再叠加神识误差
+  if (G.currentRound !== TOTAL_ROUNDS) {
+    minEst = minEst * (1 - errorMargin);
+    maxEst = maxEst * (1 + errorMargin);
+  }
+
+  return { min:Math.floor(minEst), max:Math.floor(maxEst), avg:Math.floor((minEst+maxEst)/2), precision };
+}
+
+// 渲染估值提示（需要"价值感知"能力）
+function renderEstimateHint() {
+  const hint = document.getElementById('estimateHint');
+  const hasAbility = getAbilityLevel('value_sense') > 0;
+
+  if (G.currentRound === TOTAL_ROUNDS) {
+    // 第5轮所有人都知道真实价值
+    const wh = G.currentWarehouse;
+    hint.textContent = `仓库真实总价值：${wh.totalValue}灵石（${wh.itemCount}件藏品）`;
+    hint.style.display = 'block';
+    return;
+  }
+
+  const est = estimateWarehouseValue();
+
+  if (!hasAbility) {
+    // P1-5修复：免费玩家显示粗略估值，误差±50%，标注"天机模糊"
+    const roughMult = { lo:0.5, hi:1.5 };
+    hint.innerHTML = `📊 天机模糊：约 <strong style="color:var(--spirit-blue)">${Math.floor(est.min*roughMult.lo)}</strong> ～ <strong style="color:var(--spirit-blue)">${Math.floor(est.max*roughMult.hi)}</strong> 灵石 <span style="color:var(--spirit-blue);font-size:0.75rem;">（天机模糊）</span>`;
+    hint.style.display = 'block';
+    return;
+  }
+
+  // P2修复：连击奖励comboBonusEstimate——估值精度提升（误差从±20%降至±10%），使用后消耗
+  const estMult = G.comboBonusEstimate ? { lo:0.9, hi:1.1 } : { lo:0.8, hi:1.2 };
+  const estLabel = G.comboBonusEstimate ? ' <span style="color:var(--jade);font-size:0.75rem;">（天道眷顾·精度提升）</span>' : '';
+  G.comboBonusEstimate = false; // 消耗连击奖励
+  hint.innerHTML = `📊 天机估值：约 <strong style="color:var(--vermilion)">${Math.floor(est.min*estMult.lo)}</strong> ～ <strong style="color:var(--vermilion)">${Math.floor(est.max*estMult.hi)}</strong> 灵石${estLabel}`;
+  hint.style.display = 'block';
+}
+
+// 渲染智能出价建议按钮
+function renderBidSuggestions() {
+  const container = document.getElementById('bidSuggestions');
+  const wh = G.currentWarehouse;
+  if (!wh) { container.innerHTML = ''; return; }
+
+  const suggestions = [];
+  const basePrice = wh.basePrice;
+  const myLastBid = G.lastRoundBids.find(b => b.bidderId === player.id);
+  const lastRoundMax = G.lastRoundBids.length > 0 ? Math.max(...G.lastRoundBids.map(b=>b.amount)) : 0;
+  const est = estimateWarehouseValue();
+
+  // 建议1：底价（保底出价）
+  suggestions.push({ label:'底价', value:basePrice, tip:'仓库底价' });
+
+  // 建议2：底价×1.5（温和试探）
+  const gentleBid = Math.floor(basePrice * 1.5);
+  if (gentleBid <= player.lingshi) {
+    suggestions.push({ label:'温和', value:gentleBid, tip:'底价×1.5' });
+  }
+
+  // 建议3：上轮出价+10%（加码）
+  if (myLastBid) {
+    const incrementBid = Math.floor(myLastBid.amount * 1.1);
+    if (incrementBid <= player.lingshi && incrementBid > basePrice) {
+      suggestions.push({ label:'加码', value:incrementBid, tip:'上轮+10%' });
+    }
+  }
+
+  // 建议4：估值80%（理性出价）
+  if (est.avg > 0) {
+    const rationalBid = Math.floor(est.avg * 0.8);
+    if (rationalBid <= player.lingshi && rationalBid > basePrice) {
+      suggestions.push({ label:'理性', value:rationalBid, tip:'估值80%' });
+    }
+  }
+
+  // 建议5：秒杀价（前4轮）
+  const threshold = KILL_THRESHOLDS[G.currentRound-1];
+  if (threshold > 0 && lastRoundMax > 0) {
+    const killBid = Math.floor(lastRoundMax * (1 + threshold) * 1.05);
+    if (killBid <= player.lingshi) {
+      const killInsight = getAbilityLevel('kill_insight') > 0;
+      suggestions.push({
+        label:'秒杀',
+        value:killBid,
+        tip: killInsight ? `需>${lastRoundMax}×${(1+threshold).toFixed(1)}=${Math.floor(lastRoundMax*(1+threshold))}` : '尝试秒杀'
+      });
+    }
+  }
+
+  // 建议6：全力一搏（最终轮）
+  if (G.currentRound === TOTAL_ROUNDS) {
+    const allInBid = player.lingshi;
+    if (allInBid > basePrice) {
+      suggestions.push({ label:'全力', value:allInBid, tip:'全部灵石' });
+    }
+  }
+
+  // 渲染按钮
+  container.innerHTML = suggestions.map(s => `
+    <button class="bid-suggestion-btn" onclick="setBidInput(${s.value})" title="${s.tip}">
+      <span class="sug-label">${s.label}</span>
+      <span class="sug-value">${s.value}</span>
+    </button>
+  `).join('');
+}
+
+// 点击建议按钮自动填入出价框
+function setBidInput(value) {
+  document.getElementById('bidInput').value = value;
+  document.getElementById('bidInput').focus();
+  playSfx('click');
+}
+
+function playerBid() {
+  if (G.currentRound < 1 || G.currentRound > TOTAL_ROUNDS || G.killPriceTriggered) { showAnnouncement('当前不可出价'); return; }
+  const amount = parseInt(document.getElementById('bidInput').value);
+  const overdraft = document.getElementById('overdraftCheck').checked;
+  if (!amount || amount <= 0) { showAnnouncement('请输入有效灵石数目'); return; }
+
+  const roundBids = G.roundBids[G.currentRound] || [];
+  // P1修复：分身术允许第二次出价，取较高者
+  const myExistingBids = roundBids.filter(r => r.bidderId === player.id);
+  if (myExistingBids.length >= 1 && !G.dualBid) { showAnnouncement(`第${G.currentRound}轮已出价`); return; }
+  if (myExistingBids.length >= 2) { showAnnouncement('分身术已用，本轮已达上限'); return; }
+  if (amount < G.currentWarehouse.basePrice) { showAnnouncement(`出价低于底价${G.currentWarehouse.basePrice}`); return; }
+
+  // P1修复：魔修搅局事件——强制加价10%
+  const finalAmount = G.eventForcedMarkup ? Math.ceil(amount * (1 + G.eventForcedMarkup)) : amount;
+
+  // 修仙系统：化神期出价上限提升
+  const realmBonus = getRealmBonuses();
+  const bidLimitMult = realmBonus.bidLimitMult; // 化神期0.8，否则0.5
+  if (player.zhouhuo >= 3 && amount > Math.floor(player.lingshi * bidLimitMult)) {
+    showAnnouncement(`走火入魔中，出价上限为灵石的${Math.round(bidLimitMult*100)}%`); return;
+  }
+
+  // 修仙系统：筑基期才能透支
+  if (overdraft && !realmBonus.canOverdraft) {
+    showAnnouncement('境界不足（需筑基期）才能透支出价');
+    return;
+  }
+
+  if (overdraft) {
+    const syNeeded = Math.ceil((amount - player.lingshi) / SHOUYUAN_RATE);
+    if (syNeeded > player.shouyuan) { showAnnouncement('寿元不足'); return; }
+  } else if (amount > player.lingshi) {
+    showAnnouncement('灵石不足，可勾选"透支寿元"或使用"东山再起"'); return;
+  }
+
+  const sySpent = overdraft ? Math.ceil((finalAmount - player.lingshi) / SHOUYUAN_RATE) : 0;
+  const record = { bidderId:player.id, amount:finalAmount, overdraft, shouyuanSpent:sySpent, timestamp:Date.now() };
+  if (!G.roundBids[G.currentRound]) G.roundBids[G.currentRound] = [];
+  G.roundBids[G.currentRound].push(record);
+
+  addSubmitLog(player.name, G.currentRound);
+  document.getElementById('bidInput').value = '';
+  document.getElementById('myLastBid').textContent = finalAmount;
+  document.getElementById('bidBtn').disabled = true;
+  document.getElementById('bidInput').disabled = true;
+  document.getElementById('passBtn').disabled = true;
+  document.getElementById('waitHint').style.display = 'block';
+  // 清空出价建议
+  document.getElementById('bidSuggestions').innerHTML = '';
+
+  // 播报精简：玩家出价/弃权不再单独播报，统一在轮次揭晓时显示
+  // announce(`天道使者：「${player.name}已将第${G.currentRound}轮出价投入天机匣。」`);
+  // 出价按钮动画
+  const bidBtn = document.querySelector('.btn-primary');
+  if (bidBtn) { bidBtn.classList.add('bidding'); setTimeout(() => bidBtn.classList.remove('bidding'), 400); }
+  playSfx('bid_submit');
+  checkAllSubmitted();
+}
+
+function playerPass() {
+  if (G.currentRound < 1 || G.currentRound > TOTAL_ROUNDS || G.killPriceTriggered) return;
+  const roundBids = G.roundBids[G.currentRound] || [];
+  if (roundBids.some(r => r.bidderId === player.id)) return;
+  G.playerPassedThisRound = true;
+  addSubmitLog(player.name, G.currentRound, true);
+  document.getElementById('myLastBid').textContent = '弃权';
+  document.getElementById('bidBtn').disabled = true;
+  document.getElementById('bidInput').disabled = true;
+  document.getElementById('passBtn').disabled = true;
+  document.getElementById('waitHint').style.display = 'block';
+  document.getElementById('waitHint').textContent = '已弃权，等待其他道友...';
+  document.getElementById('bidSuggestions').innerHTML = '';
+  // 播报精简：弃权不再单独播报
+  // announce(`天道使者：「${player.name}第${G.currentRound}轮弃权。」`);
+  playSfx('pass');
+  checkAllSubmitted();
+}
+
+function checkAllSubmitted() {
+  const roundBids = G.roundBids[G.currentRound] || [];
+  const totalParticipants = 1 + npcs.length; // P4-13: 入魔者仍可受限出价，计入参与人数
+  const actedCount = roundBids.length + (G.aiPassedThisRound?.length||0) + (G.playerPassedThisRound?1:0);
+  if (actedCount >= totalParticipants) {
+    setTimeout(() => endRound(), 600); // P0-2: 结算延迟从1秒缩短至0.6秒
+  }
+}
+
+function endRound() {
+  if (G.killPriceTriggered) return;
+  const roundBids = G.roundBids[G.currentRound] || [];
+  if (roundBids.length === 0) {
+    announce(`天道使者：「第${G.currentRound}轮无人出价。」`);
+    G.lastRoundBids = []; // 重置上轮出价
+    if (G.currentRound >= TOTAL_ROUNDS) { settleMultiRound(true); return; }
+    resetRoundState(); setTimeout(() => advanceRound(), 1000); return;
+  }
+
+  const sorted = [...roundBids].sort((a,b) => b.amount - a.amount);
+  const highest = sorted[0];
+  const second = sorted[1] || { amount:0 };
+  const highestBidder = highest.bidderId === player.id ? player : npcs.find(n => n.id === highest.bidderId);
+
+  // 秒杀判定
+  // 玩法优化：仅1人出价时（独狼），视为自动秒杀（底价×1.5即可触发）
+  if (G.currentRound < TOTAL_ROUNDS) {
+    const threshold = KILL_THRESHOLDS[G.currentRound-1];
+    let isKill = false;
+    if (second.amount > 0) {
+      // 正常秒杀：出价≥第二名×(1+阈值)
+      if (highest.amount >= second.amount * (1 + threshold)) isKill = true;
+    } else if (roundBids.length === 1) {
+      // 独狼秒杀：仅1人出价且出价≥底价×1.5
+      if (highest.amount >= G.currentWarehouse.basePrice * 1.5) isKill = true;
+    }
+    if (isKill) {
+      G.killPriceTriggered = true;
+      // P1修复：秒杀路径也需更新 bestBids
+      roundBids.forEach(b => {
+        const prev = G.bestBids[b.bidderId];
+        if (!prev || b.amount > prev.amount) {
+          G.bestBids[b.bidderId] = { amount:b.amount, overdraft:b.overdraft, shouyuanSpent:b.shouyuanSpent||0, round:G.currentRound };
+        }
+      });
+      revealBids(roundBids, G.currentRound, true);
+      const killReason = second.amount > 0 ? `远超第二名${Math.round(threshold*100)}%` : '独压全场';
+      announce(`天道使者：「秒杀！${highestBidder.name}以${highest.amount}灵石${killReason}，天机一锤定音！」`);
+      playSfx('kill');
+      document.body.classList.add('kill-flash');
+      setTimeout(()=>document.body.classList.remove('kill-flash'), 600);
+      settleMultiRound(false, highest);
+      return;
+    }
+  }
+
+  revealBids(roundBids, G.currentRound, false);
+  const hint = generateBidHint(roundBids);
+  const myBid = roundBids.find(r => r.bidderId === player.id);
+  let myHint = '';
+  if (myBid) {
+    const myRank = sorted.findIndex(r => r.bidderId === player.id) + 1;
+    myHint = myRank === 1 ? '你的出价暂列第一' : myRank === sorted.length ? '你的出价暂列末位' : `你的出价暂列第${myRank}位`;
+  } else { myHint = '你本轮弃权'; }
+  // 高亮显示最高出价
+  const topAmount = sorted.length > 0 ? sorted[0].amount : 0;
+  const topBidder = sorted.length > 0 ? (sorted[0].bidderId === player.id ? player : npcs.find(n=>n.id===sorted[0].bidderId)) : null;
+  const topStr = topBidder ? `最高出价：<strong style="color:var(--gold);">${topBidder.name} ${topAmount}灵石</strong>` : '无人出价';
+  // P1-6修复：信息过载优化，精简为2段（最高出价+你的状态），删除出价分布hint
+  document.getElementById('bidHint').innerHTML = `${topStr}；${myHint}`;
+  // 播报精简：出价摘要已在revealBids中播报，此处不再重复
+  // announce(`天道使者：「第${G.currentRound}轮竞拍揭晓。${hint}」`);
+
+  // 保存本轮出价供下轮建议参考
+  G.lastRoundBids = [...roundBids];
+
+  // P0-1: 累积最高出价制 — 更新每个竞拍者的跨轮最高承诺出价
+  roundBids.forEach(b => {
+    const prev = G.bestBids[b.bidderId];
+    if (!prev || b.amount > prev.amount) {
+      G.bestBids[b.bidderId] = { amount:b.amount, overdraft:b.overdraft, shouyuanSpent:b.shouyuanSpent||0, round:G.currentRound };
+    }
+  });
+  // 更新UI显示玩家的最高承诺出价
+  const myBest = G.bestBids[player.id];
+  if (myBest) {
+    document.getElementById('bidHint').innerHTML += `；你的最高承诺出价：<strong style="color:var(--vermilion);">${myBest.amount}灵石</strong>（第${myBest.round}轮）`;
+  }
+
+  if (G.currentRound >= TOTAL_ROUNDS) { settleMultiRound(); }
+  else { resetRoundState(); setTimeout(() => advanceRound(), 1200); }
+}
+
+function resetRoundState() {
+  G.playerPassedThisRound = false;
+  G.aiPassedThisRound = [];
+  G.aiSubmittedThisRound = false;
+}
+
+function revealBids(bids, round, isKill) {
+  const log = document.getElementById('bidLog');
+  if (log.querySelector('div[style]')) log.innerHTML = '';
+  const sorted = [...bids].sort((a,b) => b.amount - a.amount);
+  sorted.forEach((r, idx) => {
+    const bidder = r.bidderId === player.id ? player : npcs.find(n => n.id === r.bidderId);
+    const time = new Date().toLocaleTimeString('zh-CN',{hour12:false});
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
+    entry.innerHTML = `<span class="log-time">${time}</span>[第${round}轮揭晓] ${bidder.name} 出价 <span style="color:var(--gold);font-weight:bold;">${r.amount}灵石</span>` +
+      `${r.overdraft?'<span class="log-overdraft"> [透支寿元]</span>':''}` +
+      `${isKill && idx === 0 ?'<span class="log-kill"> [秒杀!]</span>':''}`;
+    log.insertBefore(entry, log.firstChild);
+  });
+  const allPassers = [];
+  if (G.playerPassedThisRound) allPassers.push(player.name);
+  if (G.aiPassedThisRound) G.aiPassedThisRound.forEach(id => { const n=npcs.find(x=>x.id===id); if(n) allPassers.push(n.name); });
+  if (allPassers.length > 0) {
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
+    entry.innerHTML = `<span class="log-time">${new Date().toLocaleTimeString('zh-CN',{hour12:false})}</span>[第${round}轮] ${allPassers.join('、')} 弃权`;
+    log.insertBefore(entry, log.firstChild);
+  }
+
+  // 出价摘要播报：高亮显示本轮所有出价
+  if (sorted.length > 0) {
+    const bidSummary = sorted.map(r => {
+      const bidder = r.bidderId === player.id ? player : npcs.find(n => n.id === r.bidderId);
+      return `${bidder.name} ${r.amount}灵石`;
+    }).join('，');
+    const passStr = allPassers.length > 0 ? `；${allPassers.join('、')}弃权` : '';
+    announce(`第${round}轮出价揭晓：${bidSummary}${passStr}`);
+  } else if (allPassers.length > 0) {
+    announce(`第${round}轮全员弃权，无人出价。`);
+  }
+}
+
+function generateBidHint(bids) {
+  if (bids.length === 0) return '无人出价';
+  if (bids.length === 1) return '仅一人出价';
+  const sorted = [...bids].sort((a,b) => b.amount - a.amount);
+  const spread = sorted[0].amount - sorted[sorted.length-1].amount;
+  const top = sorted[0].amount;
+  if (spread < top*0.1) return '出价接近，竞争激烈';
+  if (spread < top*0.3) return '差距不大，略领先';
+  if (spread < top*0.6) return '分化明显，志在必得';
+  return '差距悬殊，孤注一掷';
+}
+
+function addSubmitLog(name, round, isPass) {
+  const log = document.getElementById('bidLog');
+  if (log.querySelector('div[style]')) log.innerHTML = '';
+  const time = new Date().toLocaleTimeString('zh-CN',{hour12:false});
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+  entry.innerHTML = `<span class="log-time">${time}</span>[第${round}轮] ${name} ${isPass?'弃权':'已提交出价'}`;
+  log.insertBefore(entry, log.firstChild);
+}
+
+// ============================================================
+//  AI多轮竞拍策略（基于仓库总价值）
+// ============================================================
+function driveAIBids() {
+  if (G.killPriceTriggered || G.aiSubmittedThisRound) return;
+  G.aiSubmittedThisRound = true;
+  if (!G.aiPassedThisRound) G.aiPassedThisRound = [];
+  npcs.forEach(npc => {
+    // P4-13: 3层入魔不再完全阻止出价，改由 aiDecide 内部限制出价上限
+    const roundBids = G.roundBids[G.currentRound] || [];
+    if (roundBids.some(r => r.bidderId === npc.id)) return;
+    if (G.aiPassedThisRound.includes(npc.id)) return;
+    const decision = aiDecide(npc);
+    if (decision.willBid) {
+      // P1修复：锁价术效果——AI出价不能超过锁价者的出价
+      if (G.lockedBid) {
+        const playerBids = (G.roundBids[G.currentRound]||[]).filter(r => r.bidderId === player.id);
+        if (playerBids.length > 0) {
+          const playerMaxBid = Math.max(...playerBids.map(r=>r.amount));
+          if (decision.amount > playerMaxBid) {
+            decision.amount = Math.max(G.currentWarehouse.basePrice, playerMaxBid - 1);
+          }
+        }
+      }
+      const sySpent = decision.overdraftShouyuan ? decision.shouyuanToSpend : 0;
+      const record = { bidderId:npc.id, amount:decision.amount, overdraft:decision.overdraftShouyuan, shouyuanSpent:sySpent, timestamp:Date.now() };
+      if (!G.roundBids[G.currentRound]) G.roundBids[G.currentRound] = [];
+      G.roundBids[G.currentRound].push(record);
+    } else { G.aiPassedThisRound.push(npc.id); }
+  });
+  renderNPCs();
+  checkAllSubmitted();
+}
+
+function aiDecide(npc) {
+  // P4-13: 3层入魔出价上限降为灵石的50%
+  const decision = aiDecideCore(npc);
+  if (npc.zhouhuo >= 3 && decision.willBid) {
+    const bidCap = Math.floor(npc.lingshi * 0.5);
+    if (decision.amount > bidCap) {
+      if (bidCap >= G.currentWarehouse.basePrice) {
+        decision.amount = bidCap;
+        decision.overdraftShouyuan = false;
+        decision.shouyuanToSpend = 0;
+      } else {
+        decision.willBid = false;
+        decision.amount = 0;
+        decision.overdraftShouyuan = false;
+        decision.shouyuanToSpend = 0;
+      }
+    }
+  }
+  return decision;
+}
+
+function aiDecideCore(npc) {
+  const wh = G.currentWarehouse;
+  const p = npc.personality;
+  let estimatedValue = wh.basePrice * 3;
+
+  // 根据已释放线索校准估值（支持所有线索类型）
+  for (const clue of G.allClues) {
+    switch (clue.type) {
+      case 'count_quality': {
+        const qc = clue.data.qualityCount;
+        if (qc) {
+          if (qc.red) estimatedValue *= 1.5 + qc.red*0.3;
+          if (qc.gold) estimatedValue *= 1.2 + qc.gold*0.15;
+          if (qc.purple) estimatedValue *= 1.1;
+        }
+        break;
+      }
+      case 'value_range':
+        // AI估值有偏差，不完全采用区间中值
+        estimatedValue = (clue.data.min + clue.data.max) / 2 * (0.85 + Math.random()*0.3);
+        break;
+      case 'value_level':
+        if (clue.data.level && clue.data.level.includes('十万')) estimatedValue = Math.max(estimatedValue, 100000);
+        else if (clue.data.level && clue.data.level.includes('数万')) estimatedValue = Math.max(estimatedValue, 30000);
+        else if (clue.data.level && clue.data.level.includes('万余')) estimatedValue = Math.max(estimatedValue, 10000);
+        break;
+      case 'legendary_check':
+        if (clue.data.hasLegendary) estimatedValue *= 1.8;
+        break;
+      case 'epic_check':
+        if (clue.data.epicCount > 0) estimatedValue *= 1.3;
+        break;
+      case 'rare_count':
+        if (clue.data.rareCount > 0) estimatedValue *= 1 + clue.data.rareCount * 0.1;
+        break;
+      case 'max_item':
+        if (clue.data.maxVal) estimatedValue = Math.max(estimatedValue, clue.data.maxVal * wh.itemCount * 0.5);
+        break;
+      case 'avg_value':
+        if (clue.data.avgVal) estimatedValue = clue.data.avgVal * wh.itemCount;
+        break;
+      case 'median_value':
+        if (clue.data.medianVal) estimatedValue = clue.data.medianVal * wh.itemCount * 0.9;
+        break;
+    }
+  }
+  // AI估值噪声：越往后轮次噪声越小（信息越多估值越准）
+  const noiseScale = G.currentRound <= 2 ? 0.4 : G.currentRound <= 4 ? 0.25 : 0.1;
+  const noise = (Math.random()-0.5)*noiseScale;
+  const mentalPrice = Math.max(wh.basePrice, estimatedValue * (1+noise));
+
+  // P2-8: AI策略多样化
+  const strategy = npc.strategyType || 'aggressive';
+  // 钓鱼型：前2轮故意出高价（mentalPrice*0.8），第3轮起弃权或低价
+  if (strategy === 'fishing') {
+    if (G.currentRound <= 2) {
+      const fishBid = Math.floor(mentalPrice * 0.8);
+      if (fishBid >= wh.basePrice && fishBid <= npc.lingshi) {
+        return { willBid:true, amount:fishBid, overdraftShouyuan:false, shouyuanToSpend:0 };
+      }
+      const safeBid = Math.min(fishBid, npc.lingshi);
+      if (safeBid >= wh.basePrice) return { willBid:true, amount:safeBid, overdraftShouyuan:false, shouyuanToSpend:0 };
+      return { willBid:false, amount:0, overdraftShouyuan:false, shouyuanToSpend:0 };
+    } else {
+      // 第3轮起弃权或低价
+      if (Math.random() < 0.5) return { willBid:false, amount:0, overdraftShouyuan:false, shouyuanToSpend:0 };
+      const lowBid = Math.floor(wh.basePrice * 1.1);
+      if (lowBid <= npc.lingshi) return { willBid:true, amount:lowBid, overdraftShouyuan:false, shouyuanToSpend:0 };
+      return { willBid:false, amount:0, overdraftShouyuan:false, shouyuanToSpend:0 };
+    }
+  }
+  // P0修复：保守型——只在估值远低于底价倍数时弃权，正常情况下低价参与
+  if (strategy === 'conservative') {
+    // 保守型只在 mentalPrice < basePrice*1.5 时才弃权（估值太低不值得拍）
+    if (mentalPrice < wh.basePrice * 1.5) {
+      return { willBid:false, amount:0, overdraftShouyuan:false, shouyuanToSpend:0 };
+    }
+    // 否则继续走下方逻辑，但出价比例降低（保守出价）
+    // 通过 aggrMult 降级实现
+  }
+  // 激进型：出价比例提高10%；保守型：出价比例降低15%
+  const aggrMult = strategy === 'aggressive' ? 1.1 : (strategy === 'conservative' ? 0.85 : 1.0);
+  // 适应型：第5轮若玩家在 G.bestBids 中出价>mentalPrice*0.7，则提高出价比例到 0.9+aggression*0.2
+  let adaptiveBoost = false;
+  if (strategy === 'adaptive' && G.currentRound === 5) {
+    const playerBest = G.bestBids[player.id];
+    if (playerBest && playerBest.amount > mentalPrice * 0.7) adaptiveBoost = true;
+  }
+
+  // AI最大可承受出价 = 灵石 + 可透支寿元×汇率
+  const maxAffordable = npc.lingshi + npc.shouyuan * SHOUYUAN_RATE;
+
+  switch (G.currentRound) {
+    case 1: case 2: {
+      const probeBid = Math.floor(wh.basePrice * (0.8 + Math.random()*0.4) * aggrMult);
+      if (probeBid > npc.lingshi) return { willBid:false, amount:0, overdraftShouyuan:false, shouyuanToSpend:0 };
+      if (G.currentRound===1 && p.aggression>0.8 && Math.random()<0.3) {
+        const killBid = Math.floor(mentalPrice * 2.1 * aggrMult);
+        if (killBid <= npc.lingshi) return { willBid:true, amount:killBid, overdraftShouyuan:false, shouyuanToSpend:0 };
+      }
+      return { willBid:true, amount:probeBid, overdraftShouyuan:false, shouyuanToSpend:0 };
+    }
+    case 3: case 4: {
+      const threshold = KILL_THRESHOLDS[G.currentRound-1];
+      if (threshold > 0 && p.aggression > 0.6) {
+        const estSecond = mentalPrice * 0.6;
+        const killBid = Math.floor(estSecond * (1+threshold) * 1.1 * aggrMult);
+        if (killBid <= npc.lingshi && killBid < mentalPrice*1.5) {
+          return { willBid:true, amount:killBid, overdraftShouyuan:false, shouyuanToSpend:0 };
+        }
+      }
+      const bid = Math.floor(mentalPrice * (0.5 + p.greed*0.3) * aggrMult);
+      if (bid > npc.lingshi) {
+        if (p.aggression > 0.7 && npc.shouyuan > 30) {
+          const sy = Math.ceil((bid-npc.lingshi)/SHOUYUAN_RATE);
+          // 修复：校验透支寿元不超过NPC实际寿元
+          if (sy <= npc.shouyuan && bid <= maxAffordable) {
+            return { willBid:true, amount:bid, overdraftShouyuan:true, shouyuanToSpend:sy };
+          }
+        }
+        return { willBid:false, amount:0, overdraftShouyuan:false, shouyuanToSpend:0 };
+      }
+      return { willBid:true, amount:Math.min(bid,npc.lingshi), overdraftShouyuan:false, shouyuanToSpend:0 };
+    }
+    case 5: {
+      // P2-8: 适应型第5轮提高出价比例到 0.9+aggression*0.2
+      const finalBid = adaptiveBoost
+        ? Math.floor(mentalPrice * (0.9 + p.aggression*0.2))
+        : Math.floor(mentalPrice * (0.7 + p.aggression*0.3) * aggrMult);
+      if (finalBid > npc.lingshi) {
+        if (npc.shouyuan > 20) {
+          const sy = Math.ceil((finalBid-npc.lingshi)/SHOUYUAN_RATE);
+          // 修复：校验透支寿元不超过NPC实际寿元
+          if (sy <= npc.shouyuan && finalBid <= maxAffordable) {
+            return { willBid:true, amount:finalBid, overdraftShouyuan:true, shouyuanToSpend:sy };
+          }
+        }
+        return { willBid:true, amount:npc.lingshi, overdraftShouyuan:false, shouyuanToSpend:0 };
+      }
+      return { willBid:true, amount:finalBid, overdraftShouyuan:false, shouyuanToSpend:0 };
+    }
+  }
+  return { willBid:false, amount:0, overdraftShouyuan:false, shouyuanToSpend:0 };
+}
+
+// ============================================================
+//  结算（只取最后一轮出价，前轮作废）
+// ============================================================
+function settleMultiRound(forced, killWinner) {
+  let winnerId = null, finalPrice = 0, winRecord = null;
+  if (forced) {
+    announce('天道使者：「此仓库无人问津，流拍归库。」');
+    // P0-4: 流拍仓库进入流拍池
+    G.flowpoolItems.push({ warehouse: G.currentWarehouse, buyoutPrice: Math.floor(G.currentWarehouse.basePrice * 0.5) });
+  } else if (killWinner) {
+    winnerId = killWinner.bidderId; finalPrice = killWinner.amount; winRecord = killWinner;
+  } else {
+    // P0-1: 累积最高出价制 — 取所有轮次中每个竞拍者的最高承诺出价
+    const allBestEntries = Object.entries(G.bestBids).filter(([k,v]) => v.amount > 0);
+    if (allBestEntries.length > 0) {
+      const sorted = [...allBestEntries].sort((a,b) => b[1].amount - a[1].amount);
+      winnerId = sorted[0][0];
+      finalPrice = sorted[0][1].amount;
+      winRecord = { ...sorted[0][1], bidderId: sorted[0][0] };
+    } else {
+      announce('天道使者：「最终轮无人出价，此仓库流拍归库。」');
+      // P0-4: 流拍仓库进入流拍池
+      G.flowpoolItems.push({ warehouse: G.currentWarehouse, buyoutPrice: Math.floor(G.currentWarehouse.basePrice * 0.5) });
+    }
+  }
+
+  if (winnerId && winRecord) {
+    const winner = winnerId === player.id ? player : npcs.find(n => n.id === winnerId);
+    // P1修复：弃权惩罚——若获胜者仅在最后一轮出价（前轮弃权），出价上浮10%
+    if (winRecord && winRecord.round === TOTAL_ROUNDS && !G.killPriceTriggered) {
+      const penalty = Math.floor(finalPrice * 0.1);
+      finalPrice += penalty;
+      announce(`天道使者：「${winner.name}前轮观望末轮出手，天道罚息${penalty}灵石，实付${finalPrice}灵石。」`);
+    }
+    const lingshiCost = winRecord.overdraft ? finalPrice - winRecord.shouyuanSpent * SHOUYUAN_RATE : finalPrice;
+    winner.lingshi -= lingshiCost;
+    if (winRecord.overdraft && winRecord.shouyuanSpent > 0) {
+      winner.shouyuan -= winRecord.shouyuanSpent;
+      triggerZhouhuo(winner, winRecord.shouyuanSpent);
+    }
+    // P0修复：藏品自动变现为灵石，但不加入典当列表（避免双重变现）
+    // 藏品记录到收藏页（仅展示，不可典当）
+    G.currentWarehouse.items.forEach(item => {
+      G.ownedItems.push({ itemId:item.id, itemName:item.name, purchasePrice:Math.floor(finalPrice/G.currentWarehouse.itemCount), trueValue:item.value, quality:item.qualityName, warehouseName:G.currentWarehouse.name, realized:true });
+    });
+
+    // 拍卖规则：高出竞拍价的出价平分给在场其他三人
+    // P0-1: 基于跨轮最高承诺出价计算溢价补偿
+    const allBestBidsArr = Object.entries(G.bestBids).filter(([k,v]) => k !== winnerId && v.amount > 0);
+    if (allBestBidsArr.length > 0) {
+      const secondHighest = Math.max(...allBestBidsArr.map(([k,v]) => v.amount));
+      const overflow = finalPrice - secondHighest;
+      if (overflow > 0) {
+        // 补偿至少1灵石，避免Math.floor取整为0
+        const sharePerLoser = Math.max(1, Math.floor(overflow / allBestBidsArr.length));
+        // 修仙系统：合体期输家溢价补偿+20%
+        const realmBonus = getRealmBonuses();
+        let actualSharePerLoser = sharePerLoser;
+        if (realmBonus.overflowBonus > 0) {
+          actualSharePerLoser = Math.max(1, Math.floor(sharePerLoser * (1 + realmBonus.overflowBonus)));
+        }
+        const compNames = [];
+        allBestBidsArr.forEach(([bidderId]) => {
+          const loser = bidderId === player.id ? player : npcs.find(n => n.id === bidderId);
+          if (loser) {
+            loser.lingshi += actualSharePerLoser;
+            compNames.push(loser.name);
+            // P2: 输家有概率获得功德（随喜功德）
+            if (Math.random() < 0.3) {
+              loser.gongde = (loser.gongde || 0) + 1;
+              if (loser.isPlayer) announce(`天道使者：「${loser.name}随喜功德，获得1点功德。」`);
+            }
+          }
+        });
+        const killStr = G.killPriceTriggered ? '秒杀终结，霸气绝伦！' : '机缘深厚，恭喜道友。';
+        announce(`天道使者：「天机已定！${winner.name}以${finalPrice}灵石夺得${G.currentWarehouse.name}全部${G.currentWarehouse.itemCount}件藏品！${killStr}」`);
+        // 溢价补偿单独播报，确保玩家看到
+        announce(`天道使者：「溢价补偿：高出次价${overflow}灵石，由${compNames.join('、')}各得${actualSharePerLoser}灵石。」`);
+      } else {
+        const killStr2 = G.killPriceTriggered ? '秒杀终结，霸气绝伦！' : '机缘深厚，恭喜道友。';
+        announce(`天道使者：「天机已定！${winner.name}以${finalPrice}灵石夺得${G.currentWarehouse.name}全部${G.currentWarehouse.itemCount}件藏品！${killStr2}」`);
+      }
+    } else {
+      const killStr3 = G.killPriceTriggered ? '秒杀终结，霸气绝伦！' : '机缘深厚，恭喜道友。';
+      announce(`天道使者：「天机已定！${winner.name}以${finalPrice}灵石夺得${G.currentWarehouse.name}全部${G.currentWarehouse.itemCount}件藏品！${killStr3}」`);
+    }
+    if (winnerId === player.id) playSfx('win'); else playSfx('lose');
+
+    // 即时结算：记录本仓库盈亏
+    const whProfit = G.currentWarehouse.totalValue - finalPrice;
+    const isPlayerWinner = winnerId === player.id;
+    G.warehouseHistory.push({
+      name: G.currentWarehouse.name,
+      winner: winner.name,
+      price: finalPrice,
+      trueValue: G.currentWarehouse.totalValue,
+      profit: isPlayerWinner ? whProfit : 0,
+      isPlayerWinner: isPlayerWinner,
+      itemCount: G.currentWarehouse.itemCount,
+      killTriggered: G.killPriceTriggered,
+    });
+    if (isPlayerWinner) {
+      // P0修复：藏品自动变现为灵石（藏品标记realized=true不可再典当）
+      const realizedValue = G.currentWarehouse.totalValue;
+      player.lingshi += realizedValue;
+      G.sessionProfit += whProfit;
+      announce(`天道使者：「${player.name}拍得${G.currentWarehouse.itemCount}件藏品，变现获得${realizedValue}灵石。花费${finalPrice}灵石，${whProfit>=0?'净赚':'净亏'}${Math.abs(whProfit)}灵石。」`);
+      // P1-3: 连击系统
+      if (whProfit > 0 && finalPrice < G.currentWarehouse.totalValue * 0.6) {
+        updateComboStreak('bargain');
+      } else {
+        updateComboStreak('win');
+      }
+    } else if (winnerId) {
+      // NPC中标：NPC不需要典当，直接变现（NPC的ownedItems不参与典当）
+      const npcWinner = npcs.find(n => n.id === winnerId);
+      if (npcWinner) { npcWinner.lingshi += G.currentWarehouse.totalValue; }
+    }
+  } else {
+    // 流拍
+    updateComboStreak('pass');
+  }
+
+  updatePlayerUI(); renderNPCs(); renderCollection();
+
+  // 成交确认弹窗 → 藏品揭晓 → 结算弹窗
+  // P1-1修复：延迟从800ms改为2500ms，等4条播报播完后再弹窗
+  setTimeout(() => {
+    showDealPopup(winnerId, finalPrice, () => {
+      revealWarehouseItems(winnerId, finalPrice, () => {
+        showSettlementPopup(winnerId, finalPrice);
+      });
+    });
+  }, 2500);
+}
+
+// 成交确认弹窗
+function showDealPopup(winnerId, finalPrice, onComplete) {
+  const overlay = document.getElementById('dealOverlay');
+  const wh = G.currentWarehouse;
+
+  // 移除旧的状态类
+  overlay.classList.remove('kill', 'pass');
+
+  if (winnerId) {
+    const w = winnerId === player.id ? player : npcs.find(n => n.id === winnerId);
+    const isKill = G.killPriceTriggered;
+    if (isKill) overlay.classList.add('kill');
+
+    document.getElementById('dealIcon').textContent = isKill ? '⚡' : '🏆';
+    document.getElementById('dealTitle').textContent = isKill ? '秒杀终结' : '天机已定';
+    document.getElementById('dealWinner').innerHTML = `<strong>${w.name}</strong><span style="font-size:0.85rem;opacity:0.5;">（${w.sect}）</span>`;
+    document.getElementById('dealPrice').innerHTML = `${finalPrice}<span style="font-size:1rem;">灵石</span>`;
+    document.getElementById('dealWarehouse').textContent = `夺得「${wh.name}」全部${wh.itemCount}件藏品`;
+    document.querySelector('.deal-hint').textContent = '即将揭晓藏品...';
+
+    playSfx(isKill ? 'kill' : 'settle');
+  } else {
+    // 流拍
+    overlay.classList.add('pass');
+    document.getElementById('dealIcon').textContent = '🌫️';
+    document.getElementById('dealTitle').textContent = '流拍';
+    document.getElementById('dealWinner').innerHTML = '<span style="opacity:0.5;">无人夺得</span>';
+    document.getElementById('dealPrice').innerHTML = '<span style="font-size:1.2rem;opacity:0.4;">—</span>';
+    document.getElementById('dealWarehouse').textContent = `「${wh.name}」归入库房`;
+    document.querySelector('.deal-hint').textContent = '即将揭晓藏品...';
+  }
+
+  overlay.classList.add('show');
+
+  // P1-1修复：弹窗显示时长从2500ms改为2000ms
+  setTimeout(() => {
+    overlay.classList.remove('show');
+    if (onComplete) onComplete();
+  }, 2000);
+}
+
+// 藏品逐个揭晓
+let revealTimers = [];
+function revealWarehouseItems(winnerId, finalPrice, onComplete) {
+  const overlay = document.getElementById('revealOverlay');
+  const stage = document.getElementById('revealStage');
+  const counter = document.getElementById('revealCounter');
+  const gallery = document.getElementById('revealGallery');
+  const cumulativeBar = document.getElementById('revealCumulative');
+  const cumValueEl = document.getElementById('revealCumValue');
+  const tally = document.getElementById('revealTally');
+  const wh = G.currentWarehouse;
+  const items = wh.items;
+  const isPlayerWinner = winnerId === player.id;
+
+  document.getElementById('revealTitle').textContent = G.killPriceTriggered ? '秒杀揭晓' : (winnerId ? '天机揭晓' : '流拍揭晓');
+  document.getElementById('revealWhName').textContent = wh.name;
+  tally.style.display = 'none';
+  cumulativeBar.style.display = 'none';
+  stage.innerHTML = '<div style="opacity:0.3;font-size:0.9rem;">即将揭晓...</div>';
+  counter.textContent = '';
+  gallery.innerHTML = '';
+  cumValueEl.textContent = '0';
+  overlay.classList.add('show');
+
+  // 清理之前的定时器
+  revealTimers.forEach(t => clearTimeout(t));
+  revealTimers = [];
+
+  let cumulativeValue = 0;
+  const REVEAL_INTERVAL = 1200;
+
+  // 点击跳过
+  overlay.onclick = () => {
+    revealTimers.forEach(t => clearTimeout(t));
+    revealTimers = [];
+    // 跳过时补全所有未展示的藏品
+    items.forEach((item, idx) => {
+      const thumbExists = gallery.children[idx];
+      if (!thumbExists) {
+        addThumb(item);
+        cumulativeValue += item.value;
+      }
+    });
+    cumValueEl.textContent = cumulativeValue;
+    finishReveal();
+  };
+
+  function addThumb(item) {
+    const qualityClass = item.colorClass || 'q-white';
+    const thumb = document.createElement('div');
+    thumb.className = `reveal-thumb ${qualityClass}`;
+    thumb.innerHTML = `<span>${item.icon}</span><span class="rt-val">${item.value}</span>`;
+    gallery.appendChild(thumb);
+  }
+
+  items.forEach((item, idx) => {
+    const t = setTimeout(() => {
+      playSfx('reveal');
+
+      // 显示当前藏品详情
+      const qualityColor = item.colorClass || 'q-white';
+      stage.innerHTML = `<div class="reveal-item">
+        <div class="ri-icon">${item.icon}</div>
+        <div class="ri-name">${item.name}</div>
+        <div class="ri-quality ${qualityColor}">${item.qualityName}</div>
+        <div class="ri-type">${item.type} · ${item.era}</div>
+        <div class="ri-value flash">${item.value} 灵石</div>
+      </div>`;
+
+      // 追加缩略图
+      addThumb(item);
+
+      // 累积值叠加
+      cumulativeValue += item.value;
+      cumulativeBar.style.display = 'flex';
+      cumValueEl.textContent = cumulativeValue;
+      // 触发累积值跳动动画
+      cumValueEl.classList.remove('bump');
+      void cumValueEl.offsetWidth; // 强制重排
+      cumValueEl.classList.add('bump');
+
+      counter.textContent = `${idx + 1} / ${items.length}`;
+
+      // 最后一件时，显示总价对比
+      if (idx === items.length - 1) {
+        const t2 = setTimeout(() => finishReveal(), REVEAL_INTERVAL);
+        revealTimers.push(t2);
+      }
+    }, idx * REVEAL_INTERVAL);
+    revealTimers.push(t);
+  });
+
+  function finishReveal() {
+    overlay.onclick = null;
+    // 显示累积总价和成交价对比
+    tally.style.display = 'block';
+    tally.innerHTML = '';
+
+    const rows = [
+      { label: '仓库总价值', val: cumulativeValue, cls: 'gold' },
+    ];
+    if (winnerId && finalPrice > 0) {
+      rows.push({ label: '成交价格', val: finalPrice, cls: 'gold' });
+      const diff = cumulativeValue - finalPrice;
+      const isGain = diff >= 0;
+      rows.push({ label: isPlayerWinner ? (isGain ? '捡漏利润' : '出价过高') : '他人所得', val: (isGain ? '+' : '') + diff, cls: isGain ? 'jade' : 'red' });
+    } else {
+      rows.push({ label: '结果', val: '流拍归库', cls: 'red' });
+    }
+
+    let html = '';
+    rows.forEach((r, i) => {
+      if (i === rows.length - 1) html += '<div class="reveal-tally-divider"></div>';
+      html += `<div class="reveal-tally-row${i === rows.length - 1 ? ' reveal-tally-total' : ''}"><span class="label">${r.label}</span><span class="val ${r.cls}">${typeof r.val === 'number' ? r.val + ' 灵石' : r.val}</span></div>`;
+    });
+    tally.innerHTML = html;
+
+    playSfx('settle');
+
+    // 2.5秒后关闭揭晓弹窗，调用回调
+    const tEnd = setTimeout(() => {
+      overlay.classList.remove('show');
+      if (onComplete) onComplete();
+    }, 2500);
+    revealTimers.push(tEnd);
+  }
+}
+
+// 显示结算弹窗（从 settleMultiRound 拆分出来）
+function showSettlementPopup(winnerId, finalPrice) {
+  const overlay = document.getElementById('settlementOverlay');
+  if (winnerId) {
+    const w = winnerId === player.id ? player : npcs.find(n => n.id === winnerId);
+    document.getElementById('settleTitle').textContent = G.killPriceTriggered ? '秒杀终结' : '天机已定';
+    document.getElementById('settleWinner').textContent = `🏆 ${w.name}（${w.sect}）`;
+    document.getElementById('settlePrice').textContent = `${finalPrice} 灵石`;
+    // 仓库内容摘要
+    const wh = G.currentWarehouse;
+    const qSummary = {};
+    wh.items.forEach(i => { qSummary[i.qualityName] = (qSummary[i.qualityName]||0)+1; });
+    const qStr = Object.entries(qSummary).map(([q,c])=>`${q}×${c}`).join('，');
+    document.getElementById('warehouseSummary').innerHTML = `仓库共${wh.itemCount}件藏品（${qStr}）<br>总价值约 ${wh.totalValue} 灵石`;
+    document.getElementById('settleDesc').textContent = `夺得 ${wh.name} 全部藏品`;
+    const profitEl = document.getElementById('settleProfit');
+    if (winnerId === player.id) {
+      const profit = wh.totalValue - finalPrice;
+      profitEl.innerHTML = profit >= 0 ? `捡漏成功！本仓库净赚约 <strong>${profit}</strong> 灵石` : `出价过高！本仓库亏损约 <strong>${-profit}</strong> 灵石`;
+      profitEl.className = 'settle-profit ' + (profit >= 0 ? 'gain' : 'loss');
+      // 显示累计盈亏
+      profitEl.innerHTML += `<br><span style="font-size:0.85rem;opacity:0.7;">本局累计${G.sessionProfit>=0?'盈':'亏'} ${Math.abs(G.sessionProfit)} 灵石（已拍 ${G.warehouseHistory.length}/${G.totalItems}）</span>`;
+    } else { profitEl.textContent = ''; }
+  } else {
+    document.getElementById('settleTitle').textContent = '流拍';
+    document.getElementById('settleWinner').textContent = '无人夺得';
+    document.getElementById('settlePrice').textContent = '';
+    document.getElementById('settleProfit').textContent = '';
+    document.getElementById('warehouseSummary').textContent = '';
+    document.getElementById('settleDesc').textContent = `${G.currentWarehouse.name} 归入库房`;
+  }
+  document.getElementById('nextBtn').textContent = G.itemNum < G.totalItems ? '下一个仓库' : '查看总成绩';
+  // 修复：显式设置 onclick，确保秒杀后能正确进入下一个仓库
+  document.getElementById('nextBtn').onclick = () => nextItem();
+  playSfx('settle');
+  overlay.classList.add('show');
+}
+
+// ============================================================
+//  P1-3: 连击/连胜奖励系统
+// ============================================================
+function updateComboStreak(result) {
+  // result: 'win' (中标), 'bargain' (捡漏), 'lose' (亏损), 'pass' (流拍)
+  if (result === 'bargain') {
+    if (G.comboType === 'bargain') G.comboStreak++;
+    else { G.comboType = 'bargain'; G.comboStreak = 1; }
+    // P2-1: 连击降门槛，bargain >= 1 即触发
+    if (G.comboStreak >= 1) {
+      announce(`天道使者：「慧眼如炬！连续${G.comboStreak}次捡漏，额外获得1条天机线索！」`);
+      // 下个仓库额外释放1条线索
+      G.comboBonusClue = true;
+    }
+  } else if (result === 'win') {
+    if (G.comboType === 'win') G.comboStreak++;
+    else { G.comboType = 'win'; G.comboStreak = 1; }
+    // P2-1: 连击降门槛，win >= 2 即触发
+    if (G.comboStreak >= 2) {
+      announce(`天道使者：「天道眷顾！连续${G.comboStreak}次中标，下个仓库估值精度提升！」`);
+      G.comboBonusEstimate = true;
+    }
+  } else {
+    // 流拍或亏损打断连击
+    // P2-1: 连击降门槛，pass >= 2 即触发
+    if (G.comboStreak >= 2 && result === 'pass') {
+      announce(`天道使者：「否极泰来！连续流拍后，下个仓库底价减半！」`);
+      G.comboBonusHalfPrice = true;
+    }
+    G.comboStreak = 0; G.comboType = '';
+  }
+}
+
+// ============================================================
+//  P1-4: 随机风险事件
+// ============================================================
+const RANDOM_EVENTS = [
+  { id:'lingqi_revive', name:'灵气复苏', desc:'仓库灵气暴涨，总价值×1.5！', apply:(wh)=>{ wh.items.forEach(i=>i.value=Math.floor(i.value*1.5)); wh.totalValue=Math.floor(wh.totalValue*1.5); } },
+  { id:'tiandao_tribulation', name:'天道降劫', desc:'天劫降临，仓库总价值×0.7', apply:(wh)=>{ wh.items.forEach(i=>i.value=Math.floor(i.value*0.7)); wh.totalValue=Math.floor(wh.totalValue*0.7); } },
+  { id:'moxiu_intrude', name:'魔修搅局', desc:'魔修干扰，所有人强制加价10%！', apply:(wh)=>{ G.eventForcedMarkup = 0.1; } },
+  { id:'tianji_leak', name:'天机泄露', desc:'天机意外泄露，额外释放2条线索！', apply:(wh)=>{ G.eventExtraClues = 2; } },
+  { id:'seal_loosen', name:'封印松动', desc:'封印松动，底价降低30%！', apply:(wh)=>{ wh.basePrice = Math.floor(wh.basePrice*0.7); } },
+];
+
+// P0-4: 流拍池买断
+function showFlowpoolBuyout(poolItem) {
+  const wh = poolItem.warehouse;
+  const overlay = document.createElement('div');
+  overlay.id = 'flowpoolOverlay';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:240;';
+  overlay.innerHTML = `
+    <div style="background:var(--paper);border:2px solid var(--jade);border-radius:12px;padding:24px 36px;max-width:400px;text-align:center;box-shadow:0 0 30px rgba(107,142,63,0.3);">
+      <div style="font-size:2rem;margin-bottom:8px;">📦</div>
+      <h3 style="color:var(--jade);margin-bottom:8px;">流拍仓库·盲买机会</h3>
+      <p style="font-size:0.85rem;opacity:0.7;margin-bottom:12px;">「${wh.name}」流拍入库<br>含${wh.itemCount}件藏品，底价原为${wh.basePrice}灵石</p>
+      <p style="font-size:1.2rem;color:var(--gold);font-weight:bold;margin-bottom:16px;">盲买价：${poolItem.buyoutPrice}灵石</p>
+      <div style="display:flex;gap:12px;justify-content:center;">
+        <button onclick="buyoutFlowpool()" style="padding:8px 20px;background:var(--jade);color:white;border:none;border-radius:6px;cursor:pointer;font-size:0.9rem;">盲买（不看内容）</button>
+        <button onclick="closeFlowpool()" style="padding:8px 20px;background:rgba(43,43,43,0.1);border:1px solid rgba(43,43,43,0.2);border-radius:6px;cursor:pointer;font-size:0.9rem;">放弃</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+function buyoutFlowpool() {
+  const poolItem = G.flowpoolItems.shift();
+  if (!poolItem) { closeFlowpool(); return; }
+  if (player.lingshi < poolItem.buyoutPrice) { showAnnouncement('灵石不足'); closeFlowpool(); return; }
+  player.lingshi -= poolItem.buyoutPrice;
+  const wh = poolItem.warehouse;
+  // 藏品入库
+  wh.items.forEach(item => G.ownedItems.push(item));
+  const profit = wh.totalValue - poolItem.buyoutPrice;
+  G.sessionProfit += profit;
+  announce(`天道使者：「盲买成功！${player.name}以${poolItem.buyoutPrice}灵石买断「${wh.name}」，获得${wh.itemCount}件藏品（估值${wh.totalValue}灵石），${profit>=0?'净赚':'净亏'}${Math.abs(profit)}灵石。」`);
+  updatePlayerUI(); renderCollection();
+  closeFlowpool();
+}
+function closeFlowpool() {
+  const ov = document.getElementById('flowpoolOverlay');
+  if (ov) ov.remove();
+}
+
+function triggerRandomEvent() {
+  const evt = RANDOM_EVENTS[Math.floor(Math.random()*RANDOM_EVENTS.length)];
+  G.pendingEvent = evt;
+  // P0修复：同步应用事件（在生成线索之前），确保线索基于事件后的价值生成
+  evt.apply(G.currentWarehouse);
+  announce(`天道使者：「异象突生——${evt.name}！${evt.desc}」`);
+  playSfx('reveal');
+}
+
+// ============================================================
+//  P1-5: 玩家主动技能系统（天道令）
+// ============================================================
+const PLAYER_SKILLS = [
+  { id:'tianyan', name:'天眼术', cost:1, desc:'额外查看1条未释放线索', icon:'👁' },
+  { id:'suoJia', name:'锁价术', cost:2, desc:'锁定本轮出价，其他人无法超过', icon:'🔒' },
+  { id:'tanBao', name:'探宝术', cost:1, desc:'查看仓库中最高价值藏品名称', icon:'🔍' },
+  { id:'fenShen', name:'分身术', cost:2, desc:'同时出两个价，取较高者', icon:'👥' },
+];
+function getSkillTokens() { return G.skillTokens; }
+function useSkill(skillId) {
+  const skill = PLAYER_SKILLS.find(s => s.id === skillId);
+  if (!skill) return;
+  if (G.skillTokens < skill.cost) { showAnnouncement('天道令不足'); return; }
+  if (G.skillsUsed[skillId]) { showAnnouncement('此技能本仓库已使用'); return; }
+  G.skillTokens -= skill.cost;
+  G.skillsUsed[skillId] = true;
+  const wh = G.currentWarehouse;
+  switch (skillId) {
+    case 'tianyan': {
+      const unrevealed = G.warehouseClues.filter(c => c.round > G.currentRound);
+      if (unrevealed.length > 0) {
+        const clue = unrevealed[0];
+        clue.round = G.currentRound;
+        G.allClues.push(clue);
+        applyClueReveals([clue]);
+        renderWarehouseGrid(); renderClues();
+        announce(`天道使者：「天眼术成！天机显现——${clue.content}」`);
+      } else { showAnnouncement('已无线索可揭示'); G.skillTokens += skill.cost; G.skillsUsed[skillId] = false; }
+      break;
+    }
+    case 'tanBao': {
+      const maxItem = [...wh.items].sort((a,b)=>b.value-a.value)[0];
+      announce(`天道使者：「探宝术成！此仓库最珍贵的藏品为——${maxItem.name}（${maxItem.qualityName}）」`);
+      break;
+    }
+    case 'suoJia': {
+      G.lockedBid = true;
+      announce(`天道使者：「锁价术成！本轮你的出价已被天道锁定，无人可超！」`);
+      break;
+    }
+    case 'fenShen': {
+      const unrevealed = G.warehouseClues.filter(c => c.round > G.currentRound);
+      if (unrevealed.length > 0) {
+        const clue = unrevealed[0];
+        clue.round = G.currentRound;
+        G.allClues.push(clue);
+        applyClueReveals([clue]);
+        renderWarehouseGrid(); renderClues();
+        announce(`天道使者：「分身术成！分身探得天机——${clue.content}」`);
+      } else { showAnnouncement('已无线索可揭示'); G.skillTokens += skill.cost; G.skillsUsed[skillId] = false; }
+      break;
+    }
+  }
+  renderSkillBar();
+}
+function renderSkillBar() {
+  const bar = document.getElementById('skillBar');
+  if (!bar) return;
+  bar.innerHTML = `<span style="font-size:0.75rem;opacity:0.6;">天道令：${G.skillTokens}</span>`;
+  PLAYER_SKILLS.forEach(s => {
+    const used = G.skillsUsed[s.id];
+    const canAfford = G.skillTokens >= s.cost && !used;
+    bar.innerHTML += `<button class="skill-btn ${canAfford?'':'disabled'}" onclick="useSkill('${s.id}')" title="${s.desc}">${s.icon}${s.name}(${s.cost}令)${used?'✓':''}</button>`;
+  });
+}
+
+function nextItem() {
+  document.getElementById('settlementOverlay').classList.remove('show');
+  G.itemNum++;
+  setTimeout(() => startItem(), 500);
+}
+
+// ============================================================
+//  P3-11: 成就系统
+// ============================================================
+const ACHIEVEMENTS = [
+  { id:'first_kill', name:'初露锋芒', desc:'首次秒杀成功', check:()=>G.warehouseHistory.some(w=>w.killTriggered) },
+  { id:'bargain_3', name:'慧眼如炬', desc:'连续3次捡漏', check:()=>G.comboStreak>=3 && G.comboType==='bargain' },
+  { id:'legendary', name:'传说收藏家', desc:'拍得传说级藏品', check:()=>G.ownedItems.some(i=>i.quality==='传说') },
+  { id:'no_overdraft', name:'稳健修士', desc:'零透支通关', check:()=>player.zhouhuo===0 },
+  { id:'big_win', name:'一夜暴富', desc:'单局净赚10000+', check:()=>G.sessionProfit>=10000 },
+  { id:'all_win', name:'通吃全场', desc:'拍得全部5个仓库', check:()=>G.warehouseHistory.filter(w=>w.isPlayerWinner).length>=5 },
+];
+function checkAchievements() {
+  let newOnes = [];
+  for (const a of ACHIEVEMENTS) {
+    if (!G.achievements[a.id] && a.check()) {
+      G.achievements[a.id] = true;
+      newOnes.push(a);
+      meta.tdaoPoints += 50; // 成就奖励50积分
+    }
+  }
+  return newOnes;
+}
+
+function endGame() {
+  // 修仙系统：结算时间修为
+  syncTimeXiuwei();
+  let debtRepaid = 0;
+  if (G.debts.length > 0) {
+    for (const debt of G.debts) {
+      if (player.lingshi >= debt.remaining) { player.lingshi -= debt.remaining; debtRepaid += debt.remaining; }
+      else { debt.remaining -= player.lingshi; debtRepaid += player.lingshi; player.lingshi = 0; }
+    }
+    G.debts = G.debts.filter(d => d.remaining > 0);
+  }
+
+  // 计算并获得天道积分
+  const tdaoEarned = calculateTdaoEarned();
+  meta.tdaoPoints += tdaoEarned;
+  // 修仙系统：每局结束自动获得修为（根据利润和境界）
+  const realmBonus = getRealmBonuses();
+  const baseXiuwei = 50;
+  const profitBonus = Math.max(0, Math.floor(G.sessionProfit / 100));
+  const realmMult = 1 + realmBonus.realmIndex * 0.2;
+  const xiuweiEarned = Math.floor((baseXiuwei + profitBonus) * realmMult);
+  meta.xiuwei += xiuweiEarned;
+  // 灵石全局化：保存当前灵石到存档
+  saveMeta();
+  // P3-11: 成就判定
+  const newAchs = checkAchievements();
+  if (newAchs.length > 0) {
+    saveMeta();
+    const achStr = newAchs.map(a => `「${a.name}」${a.desc}`).join('；');
+    announce(`天道使者：「道友达成成就——${achStr}！每项奖励50积分。」`);
+  } else {
+    saveMeta();
+  }
+
+  document.getElementById('settleTitle').textContent = '拍卖结束';
+  document.getElementById('settleWinner').textContent = `道友共拍得 ${G.ownedItems.length} 件藏品`;
+  document.getElementById('settlePrice').textContent = `剩余灵石 ${player.lingshi}`;
+  // 显示本局仓库结算历史
+  let historyHtml = '';
+  if (G.warehouseHistory.length > 0) {
+    historyHtml = '<div style="margin-top:8px;font-size:0.85rem;">本局战报：<br>';
+    G.warehouseHistory.forEach((h, i) => {
+      const icon = h.isPlayerWinner ? '🏆' : '▪';
+      const profitStr = h.isPlayerWinner ? (h.profit >= 0 ? ` <span style="color:var(--jade);">+${h.profit}</span>` : ` <span style="color:var(--vermilion);">${h.profit}</span>`) : '';
+      historyHtml += `${icon} ${h.name} → ${h.winner}（${h.price}灵石）${profitStr}<br>`;
+    });
+    historyHtml += `</div>`;
+  }
+  document.getElementById('settleProfit').innerHTML = `本局累计${G.sessionProfit>=0?'盈利':'亏损'} <strong style="color:${G.sessionProfit>=0?'var(--jade)':'var(--vermilion)'};">${Math.abs(G.sessionProfit)}</strong> 灵石${historyHtml}`;
+  document.getElementById('settleProfit').className = 'settle-profit ' + (G.sessionProfit>=0?'gain':'loss');
+  document.getElementById('warehouseSummary').innerHTML = `寿元 ${player.shouyuan} | 走火入魔 ${player.zhouhuo}层 | 剩余债务 ${G.debts.reduce((s,d)=>s+d.remaining,0)}<br><span style="color:var(--gold);font-size:1.1rem;">获得天道积分 +${tdaoEarned}（总计 ${meta.tdaoPoints}）</span>`;
+  document.getElementById('settleDesc').textContent = `可前往修炼坊市永久解锁能力`;
+  // 在结算描述中添加修为信息
+  const settleDescEl = document.getElementById('settleDesc');
+  if (settleDescEl) settleDescEl.innerHTML += `<br><span style="color:var(--vermilion);">修炼所得：+${xiuweiEarned}修为</span>`;
+  document.getElementById('nextBtn').textContent = '前往修炼坊市';
+  document.getElementById('nextBtn').onclick = () => {
+    document.getElementById('settlementOverlay').classList.remove('show');
+    openShop(false);
+    // 修改关闭按钮行为：关闭后回到开始界面（不刷新页面）
+    setTimeout(() => {
+      const closeBtn = document.querySelector('.shop-close');
+      if (closeBtn) {
+        closeBtn.textContent = '返回主界面';
+        closeBtn.onclick = () => { closeShop(); returnToStart(); };
+      }
+    }, 100);
+  };
+  document.getElementById('settlementOverlay').classList.add('show');
+}
+
+// 不刷新页面重开新局
+function returnToStart() {
+  // 重置游戏状态
+  G.tier = null;
+  G.currentWarehouse = null;
+  G.currentRound = 0;
+  G.roundBids = {};
+  G.allClues = [];
+  G.killPriceTriggered = false;
+  G.itemNum = 1;
+  G.ownedItems = [];
+  G.debts = [];
+  G.loanCount = 0;
+  G.aiSubmittedThisRound = false;
+  G.pendingComebackMethod = null;
+  G.playerPassedThisRound = false;
+  G.aiPassedThisRound = [];
+  G.lastRoundBids = [];
+  G.warehouseClues = [];
+  G.sessionProfit = 0;
+  G.warehouseHistory = [];
+  // P2修复：重置所有新增G字段
+  G.bestBids = {};
+  G.comboStreak = 0; G.comboType = '';
+  G.comboBonusClue = false; G.comboBonusHalfPrice = false; G.comboBonusEstimate = false;
+  G.skillTokens = 0; G.skillsUsed = {};
+  G.pendingEvent = null;
+  G.flowpoolItems = [];
+  G.lockedBid = false; G.dualBid = false;
+  G.eventForcedMarkup = 0; G.eventExtraClues = 0;
+  // 注意：G.achievements 不重置（永久成就跨局保留）
+  // 灵石全局化：保存当前灵石到存档
+  saveMeta();
+  // 重置玩家属性（applyMetaAbilities会读取meta.globalLingshi保留灵石）
+  applyMetaAbilities();
+  player.zhouhuo = 0;
+  player.bidLimit = undefined;
+  // 重置UI
+  document.getElementById('mainContainer').style.display = 'none';
+  document.getElementById('tierSelectOverlay').classList.remove('show');
+  document.getElementById('startOverlay').classList.remove('hidden');
+  document.getElementById('playerNameInput').value = player.name;
+  // 修复：恢复 nextBtn 的 onclick 为 nextItem
+  document.getElementById('nextBtn').onclick = () => nextItem();
+  document.getElementById('nextBtn').textContent = '下一个仓库';
+  updateStartDisplay();
+  updatePlayerUI();
+  renderCollection();
+  // 清空播报队列
+  clearTimeout(announceTimer);
+  announceQueue = [];
+  announceProcessing = false;
+}
+
+// ============================================================
+//  走火入魔
+// ============================================================
+function triggerZhouhuo(bidder, shouyuanSpent) {
+  const baseLayers = Math.max(1, Math.floor(shouyuanSpent/50));
+  let actual = baseLayers;
+  if (bidder.gongde > 0) { const offset = Math.min(bidder.gongde, baseLayers); bidder.gongde -= offset; actual -= offset; }
+  // P2-3: 业障(yezhang)影响入魔，增加入魔层数
+  if (bidder.yezhang >= 60) actual += 2;
+  else if (bidder.yezhang >= 40) actual += 1;
+  if (actual > 0) {
+    bidder.zhouhuo += actual;
+    document.body.classList.add('shaking');
+    if (bidder.isPlayer) {
+      document.body.classList.add('zhouhuo-active');
+      // 增加红色边框闪烁
+      const flash = document.createElement('div');
+      flash.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(199,62,29,0.2);pointer-events:none;z-index:999;animation:flashFade 0.6s ease;';
+      document.body.appendChild(flash);
+      setTimeout(() => flash.remove(), 600);
+    }
+    setTimeout(() => { document.body.classList.remove('shaking'); document.body.classList.remove('zhouhuo-active'); }, 600);
+    playSfx('zhouhuo');
+    // P4-13: 3层入魔不再完全阻止出价，而是神识受损，出价上限降低50%
+    if (bidder.zhouhuo >= 3) {
+      bidder.bidLimit = Math.floor(bidder.lingshi * 0.5);
+      const zhouhuoStr = '神识受损，出价上限降至灵石的50%！';
+      announce(`天道使者：「${bidder.name}逆天而行，走火入魔${actual}层！${zhouhuoStr}」`);
+    } else {
+      announce(`天道使者：「${bidder.name}逆天而行，走火入魔${actual}层！因果循环，报应不爽。」`);
+    }
+  }
+}
+
+// P4-13: 消耗10功德降低1层入魔
+function purifyZhouhuo() {
+  if (player.zhouhuo <= 0) { showAnnouncement('未入魔，无需净化'); return; }
+  if (player.gongde < 10) { showAnnouncement('功德不足10点，无法净化'); return; }
+  player.gongde -= 10;
+  player.zhouhuo -= 1;
+  if (player.zhouhuo < 3) player.bidLimit = undefined; // 解除出价上限限制
+  announce(`天道使者：「${player.name}以10功德化解1层入魔，神识渐复。」`);
+  playSfx('comeback');
+  updatePlayerUI();
+}
+
+// ============================================================
+//  东山再起
+// ============================================================
+function checkComeback() {
+  const minPrice = G.currentWarehouse.basePrice;
+  const btn = document.getElementById('comebackBtn');
+  if (player.lingshi < minPrice) {
+    btn.style.display = 'inline-block';
+    document.getElementById('cbPawn').disabled = G.ownedItems.length === 0;
+    document.getElementById('cbTrial').disabled = player.shouyuan < 10;
+    document.getElementById('cbLoan').disabled = G.loanCount >= MAX_LOANS;
+  } else { btn.style.display = 'none'; }
+}
+function showComebackPanel() {
+  document.getElementById('comebackOverlay').classList.add('show');
+  document.getElementById('cbPawn').disabled = G.ownedItems.length === 0;
+  document.getElementById('cbTrial').disabled = player.shouyuan < 10;
+  document.getElementById('cbLoan').disabled = G.loanCount >= MAX_LOANS;
+  playSfx('comeback');
+}
+function hideComebackPanel() { document.getElementById('comebackOverlay').classList.remove('show'); }
+function comebackAction(method) {
+  G.pendingComebackMethod = method;
+  if (method === '典当藏品') {
+    // P0修复：过滤掉已自动变现的藏品（realized:true），只允许典当未变现的
+    const pawnableItems = G.ownedItems.map((item, i) => ({ item, i })).filter(x => !x.item.realized);
+    if (pawnableItems.length === 0) { showAnnouncement('无可典当藏品（拍得的藏品已自动变现）'); return; }
+    hideComebackPanel();
+    if (pawnableItems.length === 1) { executePawn(pawnableItems[0].i); }
+    else {
+      let html = '<h4>选择要典当的藏品</h4>';
+      const pawnRatio = getPawnRatio();
+      pawnableItems.forEach(({ item, i }) => {
+        const pawnValue = Math.floor(item.trueValue * pawnRatio);
+        const profit = pawnValue - item.purchasePrice;
+        const profitStr = profit >= 0 ? `<span style="color:var(--jade);">赚${profit}</span>` : `<span style="color:var(--vermilion);">亏${-profit}</span>`;
+        html += `<button class="comeback-option" onclick="executePawn(${i})"><div class="co-title">${item.itemName}</div><div class="co-desc">${item.qualityName} | 典当 ${pawnValue} 灵石 | ${profitStr}</div></button>`;
+      });
+      html += '<button class="comeback-close" onclick="hideComebackInput()">取消</button>';
+      // 修复：使用独立容器，不覆盖原有DOM结构
+      document.getElementById('cbPawnList').innerHTML = html;
+      document.getElementById('cbPawnList').style.display = 'block';
+      document.getElementById('cbInputMain').style.display = 'none';
+      document.getElementById('comebackInputOverlay').classList.add('show');
+    }
+  } else if (method === '天道试炼') {
+    // 确保输入界面可见
+    document.getElementById('cbPawnList').style.display = 'none';
+    document.getElementById('cbInputMain').style.display = 'block';
+    const risk = getTrialRisk();
+    document.getElementById('cbInputTitle').textContent = '天道试炼';
+    document.getElementById('cbInputDesc').textContent = `消耗寿元换取灵石（1寿元=${TRIAL_RATE}灵石，失败率${Math.round(risk*100)}%）\n当前寿元：${player.shouyuan}`;
+    document.getElementById('cbInputValue').value = Math.min(20, player.shouyuan);
+    document.getElementById('cbInputValue').max = player.shouyuan;
+    document.getElementById('comebackInputOverlay').classList.add('show');
+    hideComebackPanel();
+  } else if (method === '门派借贷') {
+    // 确保输入界面可见
+    document.getElementById('cbPawnList').style.display = 'none';
+    document.getElementById('cbInputMain').style.display = 'block';
+    document.getElementById('cbInputTitle').textContent = '门派借贷';
+    document.getElementById('cbInputDesc').textContent = `向${player.sect}借贷灵石（利率${LOAN_INTEREST*100}%，已借${G.loanCount}/${MAX_LOANS}次）`;
+    document.getElementById('cbInputValue').value = 1000;
+    document.getElementById('comebackInputOverlay').classList.add('show');
+    hideComebackPanel();
+  } else if (method === '因果转世') {
+    hideComebackPanel(); executeReincarnation();
+  }
+}
+function executePawn(index) {
+  if (index < 0 || index >= G.ownedItems.length) return;
+  const item = G.ownedItems[index];
+  const pawnRatio = getPawnRatio();
+  const pawnValue = Math.floor(item.trueValue * pawnRatio);
+  player.lingshi += pawnValue;
+  G.ownedItems.splice(index, 1);
+  hideComebackInput(); updatePlayerUI(); renderCollection();
+  announce(`天道使者：「${player.name}典当${item.itemName}，折价${pawnValue}灵石。」`);
+  checkComeback();
+}
+function confirmComebackInput() {
+  const val = parseInt(document.getElementById('cbInputValue').value);
+  if (!val || val <= 0) { showAnnouncement('请输入有效数值'); return; }
+  if (G.pendingComebackMethod === '天道试炼') {
+    if (val > player.shouyuan) { showAnnouncement('寿元不足'); return; }
+    const risk = getTrialRisk();
+    const success = Math.random() > risk;
+    if (success) { const gained = val * TRIAL_RATE; player.shouyuan -= val; player.lingshi += gained; announce(`天道使者：「${player.name}历劫成功！以${val}年寿元换得${gained}灵石。」`); }
+    else { player.shouyuan -= val; triggerZhouhuo(player, val); announce(`天道使者：「${player.name}天道试炼失败！寿元折损${val}年，走火入魔！」`); }
+  } else if (G.pendingComebackMethod === '门派借贷') {
+    const interest = Math.floor(val * LOAN_INTEREST); const totalDebt = val + interest;
+    player.lingshi += val; G.debts.push({ principal:val, interestRate:LOAN_INTEREST, remaining:totalDebt }); G.loanCount++;
+    announce(`天道使者：「${player.name}向${player.sect}借贷${val}灵石，利息${interest}灵石。」`);
+  }
+  hideComebackInput(); updatePlayerUI(); renderCollection(); checkComeback();
+}
+function executeReincarnation() {
+  const keepCount = Math.max(0, Math.floor(G.ownedItems.length * 0.5));
+  const removed = G.ownedItems.splice(0, G.ownedItems.length - keepCount);
+  const pawnRatio = getPawnRatio();
+  const refund = removed.reduce((s,i) => s + Math.floor(i.trueValue*pawnRatio), 0);
+  // 修复：保留原有灵石而非清空
+  player.lingshi = Math.max(1000, player.lingshi + Math.floor(refund*0.5));
+  player.shouyuan = Math.max(50, Math.floor(player.shouyuan*0.5));
+  player.zhouhuo = 0; G.debts = []; G.loanCount = 0;
+  announce(`天道使者：「${player.name}因果转世，浴火重生！寿元折半，藏品半失，债务清零。」`);
+  updatePlayerUI(); renderCollection(); checkComeback();
+}
+
+// 主动偿还债务
+function repayDebt() {
+  const totalDebt = G.debts.reduce((s,d)=>s+d.remaining, 0);
+  if (totalDebt === 0) return;
+  if (player.lingshi <= 0) { showAnnouncement('灵石不足，无法偿还'); return; }
+  const repayAmount = Math.min(player.lingshi, totalDebt);
+  player.lingshi -= repayAmount;
+  // 按比例偿还各笔债务
+  let remaining = repayAmount;
+  for (const debt of G.debts) {
+    if (remaining <= 0) break;
+    const pay = Math.min(remaining, debt.remaining);
+    debt.remaining -= pay;
+    remaining -= pay;
+  }
+  G.debts = G.debts.filter(d => d.remaining > 0);
+  announce(`天道使者：「${player.name}偿还债务${repayAmount}灵石，剩余债务${G.debts.reduce((s,d)=>s+d.remaining,0)}灵石。」`);
+  updatePlayerUI(); renderCollection();
+}
+
+// ============================================================
+//  UI渲染
+// ============================================================
+function updatePlayerUI() {
+  const oldLingshi = window._lastLingshi || player.lingshi;
+  document.getElementById('resLingshi').textContent = player.lingshi;
+  if (oldLingshi !== player.lingshi) {
+    const el = document.getElementById('resLingshi');
+    if (el) { el.classList.add('lingshi-change'); setTimeout(() => el.classList.remove('lingshi-change'), 500); }
+  }
+  window._lastLingshi = player.lingshi;
+  document.getElementById('resShouyuan').textContent = player.shouyuan;
+  document.getElementById('resGongde').textContent = player.gongde;
+  document.getElementById('resYezhang').textContent = player.yezhang;
+  document.getElementById('resShenshi').textContent = player.shenshi;
+  document.getElementById('resZhouhuo').textContent = player.zhouhuo;
+  const badge = document.getElementById('zhouhuoBadge');
+  const debtBadge = document.getElementById('debtBadge');
+  if (player.zhouhuo > 0) { badge.style.display='inline-block'; badge.textContent=`入魔 ${player.zhouhuo}`; } else badge.style.display='none';
+  // P4-13: 功德降魔徽章（功德>0且入魔>0时显示）
+  const purifyBadge = document.getElementById('purifyBadge');
+  if (purifyBadge) {
+    if (player.gongde >= 10 && player.zhouhuo > 0) { purifyBadge.style.display='inline-block'; purifyBadge.textContent=`功德降魔(10🌟)`; }
+    else purifyBadge.style.display='none';
+  }
+  const totalDebt = G.debts.reduce((s,d)=>s+d.remaining, 0);
+  if (totalDebt > 0) { debtBadge.style.display='inline-block'; debtBadge.textContent=`债务 ${totalDebt}`; } else debtBadge.style.display='none';
+  document.getElementById('resShouyuan').parentElement.classList.toggle('warning', player.shouyuan < 50);
+  // 天道积分徽章
+  document.getElementById('tdaoBadge').textContent = `⚡${meta.tdaoPoints}`;
+}
+function renderNPCs() {
+  const container = document.getElementById('npcContainer');
+  const strategyLabels = { aggressive:'激进', fishing:'钓鱼', conservative:'保守', adaptive:'应变' };
+  const strategyColors = { aggressive:'var(--vermilion)', fishing:'#9b59b6', conservative:'var(--jade)', adaptive:'var(--spirit-blue)' };
+  container.innerHTML = npcs.map(npc => {
+    const roundBids = G.roundBids[G.currentRound] || [];
+    const hasBid = roundBids.some(r => r.bidderId === npc.id);
+    const hasPassed = G.aiPassedThisRound?.includes(npc.id);
+    let status = '待出价';
+    if (hasBid) status = '已提交'; else if (hasPassed) status = '弃权';
+    const stratLabel = strategyLabels[npc.strategyType] || '激进';
+    const stratColor = strategyColors[npc.strategyType] || 'var(--vermilion)';
+    return `<div class="npc-card ${npc.zhouhuo>0?'zhouhuo':''} ${hasBid?'bid-submitted':''} ${hasBid?'bid-flash':''}" title="${npc.desc||''}">
+      <span class="npc-avatar">${npc.icon}</span>
+      <div class="npc-info">
+        <div class="npc-name">${npc.name} ${npc.zhouhuo>0?`🔥${npc.zhouhuo}`:''}</div>
+        <div class="npc-sect">${npc.sect} <span class="npc-strat-badge" style="color:${stratColor};background:rgba(43,43,43,0.06);">[${stratLabel}]</span></div>
+      </div>
+      <div style="text-align:right;">
+        <div class="npc-lingshi">💎${npc.lingshi}</div>
+        <div class="npc-bid-status">${status}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function renderCollection() {
+  const panel = document.getElementById('collectionPanel');
+  const list = document.getElementById('collectionList');
+  if (G.ownedItems.length === 0) {
+    list.innerHTML = '<div class="empty-hint">尚未拍得任何藏品<br>入局竞拍，夺取机缘！</div>';
+  } else {
+    list.innerHTML = '<div class="collection-grid">' + G.ownedItems.map(item => {
+      const profit = item.trueValue - item.purchasePrice;
+      const profitClass = profit >= 0 ? 'gain' : 'loss';
+      const profitStr = profit >= 0 ? `+${profit}` : `${profit}`;
+      const source = item.warehouseName ? `来自：${item.warehouseName}` : '';
+      return `<div class="collection-card ${item.qualityName==='凡品'?'q-white':item.qualityName==='良品'?'q-green':item.qualityName==='精良'?'q-blue':item.qualityName==='稀有'?'q-purple':item.qualityName==='史诗'?'q-gold':'q-red'}">
+        <div class="cc-name">${item.itemName}</div>
+        <div class="cc-meta">${item.qualityName} | 买${item.purchasePrice}💎 | 值${item.trueValue}💎</div>
+        <div class="cc-profit ${profitClass}">${profit>=0?'赚':'亏'} ${profitStr}💎</div>
+        ${source ? `<div class="cc-source">${source}</div>` : ''}
+      </div>`;
+    }).join('') + '</div>';
+  }
+  renderHistory();
+}
+
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  if (G.warehouseHistory.length === 0) {
+    list.innerHTML = '<div class="empty-hint">尚未完成任何仓库竞拍</div>';
+    return;
+  }
+  list.innerHTML = G.warehouseHistory.map((h, i) => {
+    const icon = h.isPlayerWinner ? '🏆' : '▫️';
+    const profitStr = h.isPlayerWinner
+      ? (h.profit >= 0 ? `<span style="color:var(--jade);">+${h.profit}</span>` : `<span style="color:var(--vermilion);">${h.profit}</span>`)
+      : '<span style="opacity:0.4;">未中标</span>';
+    return `<div class="collection-card" style="margin-bottom:4px;">
+      <div class="cc-name">${icon} ${h.name}</div>
+      <div class="cc-meta">中标：${h.winner} | 出价：${h.price}💎 | 真值：${h.trueValue}💎 | ${h.itemCount}件</div>
+      <div class="cc-profit">${profitStr}</div>
+    </div>`;
+  }).join('');
+}
+
+function switchTab(tabName) {
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  if (tabName === 'collection') {
+    document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
+    document.getElementById('tabCollection').classList.add('active');
+  } else {
+    document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
+    document.getElementById('tabHistory').classList.add('active');
+  }
+}
+// 播报队列系统：避免连续播报互相覆盖
+let announceQueue = [];
+let announceTimer = null;
+let announceProcessing = false;
+
+function announce(text) { showAnnouncement(text); }
+function showAnnouncement(text) {
+  announceQueue.push(text);
+  if (!announceProcessing) processAnnounceQueue();
+}
+function processAnnounceQueue() {
+  if (announceQueue.length === 0) { announceProcessing = false; return; }
+  announceProcessing = true;
+  const text = announceQueue.shift();
+  const bubble = document.getElementById('announcementBubble');
+  const area = document.getElementById('announcementArea');
+  // 高亮出价价格：将"XX灵石"和"XX年寿元"等数字高亮
+  const htmlText = text
+    .replace(/(\d+)灵石/g, '<span style="color:var(--gold);font-weight:bold;">$1灵石</span>')
+    .replace(/(\d+)年寿元/g, '<span style="color:var(--vermilion);font-weight:bold;">$1年寿元</span>')
+    .replace(/以(\d+)灵石/g, '以<span style="color:var(--gold);font-weight:bold;font-size:1.1em;">$1灵石</span>');
+  document.getElementById('announcementText').innerHTML = htmlText;
+  // 重要播报（秒杀、结算）增加背景色区分
+  if (area) {
+    if (text.indexOf('秒杀') !== -1 || text.indexOf('结算') !== -1 || text.indexOf('天机已定') !== -1) {
+      area.classList.add('kill-announce');
+    } else {
+      area.classList.remove('kill-announce');
+    }
+  }
+  bubble.classList.add('show');
+  clearTimeout(announceTimer);
+  // 播报速度优化：大幅缩短显示时间
+  const duration = announceQueue.length > 0 ? 1500 : 2500;
+  announceTimer = setTimeout(() => {
+    bubble.classList.remove('show');
+    setTimeout(() => processAnnounceQueue(), 100);
+  }, duration);
+}
+function hideComebackInput() { document.getElementById('comebackInputOverlay').classList.remove('show'); }
+document.getElementById('bidInput').addEventListener('keydown', e => { if (e.key==='Enter') playerBid(); });
+
+// 初始化：加载存档并显示天道积分
+loadMeta();
+function updateStartDisplay() {
+  const el = document.getElementById('startTdaoDisplay');
+  if (meta.tdaoPoints > 0) {
+    const ownedAbilities = Object.entries(meta.abilities).filter(([_,lv])=>lv>0);
+    el.innerHTML = `⚡天道积分：<strong style="color:var(--gold)">${meta.tdaoPoints}</strong>` +
+      (ownedAbilities.length > 0 ? ` | 已习得：${ownedAbilities.map(([id,lv])=>{const ab=ABILITIES.find(a=>a.id===id);return `${ab.name}Lv${lv}`}).join('、')}` : '');
+  }
+  // 显示全局灵石余额
+  if (meta.globalLingshi !== null) {
+    el.innerHTML += `<br>💎灵石余额：<strong style="color:var(--gold)">${meta.globalLingshi}</strong>`;
+  }
+  // 显示修为境界（含待结算修为）
+  const info = getRealmInfo();
+  const pending = getPendingXiuwei();
+  el.innerHTML += `<br>${info.realm.icon} 境界：<strong style="color:var(--vermilion);">${info.realm.name}${info.subLevel}层</strong> | 修为：${meta.xiuwei + pending}${pending>0?' <span style="color:var(--jade);font-size:0.75rem;">(+'+pending+'待结算)</span>':''}`;
+}
+updateStartDisplay();
+</script>
+</body>
+</html>
