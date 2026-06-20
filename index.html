@@ -488,7 +488,7 @@ body {
 
 /* 线索揭示动画 */
 @keyframes clueReveal { 0% { opacity:0; transform:translateX(-10px); } 100% { opacity:1; transform:translateX(0); } }
-.clue-item-new { animation:clueReveal 0.5s ease; }
+.clue-item-new { animation:clueReveal 0.5s ease forwards; }
 /* 仓库格子揭示动画 */
 @keyframes cellReveal { 0% { opacity:0.3; transform:scale(0.8); } 100% { opacity:1; transform:scale(1); } }
 .warehouse-cell.revealed { animation:cellReveal 0.4s ease; }
@@ -2198,6 +2198,9 @@ function renderClues() {
   list.innerHTML = G.allClues.map((c, i) =>
     `<div class="clue-item${i === G.allClues.length - 1 ? ' clue-item-new' : ''}"><span class="clue-round">[第${c.round}轮]</span>${c.content}</div>`
   ).join('');
+  // 自动滚动到底部，确保最新线索可见
+  const cluesArea = document.getElementById('cluesArea');
+  if (cluesArea) cluesArea.scrollTop = cluesArea.scrollHeight;
 }
 
 // ============================================================
