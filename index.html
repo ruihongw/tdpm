@@ -605,6 +605,9 @@ body {
     <input type="text" id="playerNameInput" value="李逍遥" maxlength="8" style="padding:4px 10px;border:1px solid var(--gold);border-radius:4px;background:rgba(255,255,255,0.5);font-family:'ZCOOL XiaoWei',serif;font-size:1rem;width:120px;text-align:center;">
   </div>
   <div id="startTdaoDisplay" style="margin-bottom:12px;font-size:0.9rem;opacity:0.7;"></div>
+  <div style="font-size:0.75rem;opacity:0.6;margin:8px 0;line-height:1.6;">
+    💡 入局拍卖赚灵石 → 修仙突破提升境界 → 境界解锁拍卖特权 → 历练闯关获修为 → 藏品装备为法宝增强战力
+  </div>
   <button class="start-btn" onclick="enterTierSelect()">入局</button>
   <button class="btn btn-ghost" style="margin-top:12px;font-size:1rem;" onclick="openShop(true)">修炼坊市（局外养成）</button>
   <button class="btn btn-ghost" style="margin-top:8px;font-size:1rem;" onclick="openCultivation()">修仙洞府（挂机修炼）</button>
@@ -654,6 +657,11 @@ body {
         <div class="rb-item"><span class="rb-icon">⏳</span><span class="rb-value" id="rbShouyuan">100</span></div>
         <div class="rb-item"><span class="rb-icon">🔥</span><span class="rb-value" id="rbZhouhuo">0</span></div>
         <div class="rb-item"><span class="rb-icon">⚡</span><span class="rb-value" id="rbTdao">0</span></div>
+      </div>
+      <div style="display:flex;gap:6px;justify-content:center;margin:4px 0;">
+        <button class="btn btn-ghost" style="padding:2px 10px;font-size:0.7rem;" onclick="openCultivation()">🔮 修仙</button>
+        <button class="btn btn-ghost" style="padding:2px 10px;font-size:0.7rem;" onclick="openBattle()">⚔️ 历练</button>
+        <button class="btn btn-ghost" style="padding:2px 10px;font-size:0.7rem;" onclick="openShop(true)">🏪 坊市</button>
       </div>
     </div>
 
@@ -859,6 +867,11 @@ body {
     <div class="settle-profit" id="settleProfit"></div>
     <div class="warehouse-summary" id="warehouseSummary"></div>
     <div class="settle-desc" id="settleDesc"></div>
+    <div id="settleEntryDiv" style="display:none;gap:6px;justify-content:center;margin-top:12px;">
+      <button class="btn btn-ghost" style="padding:4px 12px;font-size:0.75rem;" onclick="document.getElementById('settlementOverlay').classList.remove('show');openCultivation();">🔮 修仙</button>
+      <button class="btn btn-ghost" style="padding:4px 12px;font-size:0.75rem;" onclick="document.getElementById('settlementOverlay').classList.remove('show');openBattle();">⚔️ 历练</button>
+      <button class="btn btn-ghost" style="padding:4px 12px;font-size:0.75rem;" onclick="document.getElementById('settlementOverlay').classList.remove('show');openShop(true);">🏪 坊市</button>
+    </div>
     <button class="btn btn-primary" onclick="nextItem()" id="nextBtn">下一个仓库</button>
   </div>
 </div>
@@ -1194,6 +1207,16 @@ const ABILITIES = [
     maxLevel:1, costFn:(lv)=>800, effect:(lv)=>'显示精确阈值' },
   { id:'value_sense', icon:'📊', name:'价值感知', desc:'出价时显示估值范围/级',
     maxLevel:1, costFn:(lv)=>600, effect:(lv)=>'显示估值提示' },
+  { id:'stamina_boost', icon:'💪', name:'体魄强化', desc:'体力上限+2/级',
+    maxLevel:2, costFn:(lv)=>80*(lv+1), effect:(lv)=>`+${lv*2}体力上限` },
+  { id:'stamina_recover', icon:'💧', name:'灵泉滋养', desc:'体力恢复速度+50%/级',
+    maxLevel:2, costFn:(lv)=>60*(lv+1), effect:(lv)=>`+${lv*50}%恢复速度` },
+  { id:'battle_atk', icon:'⚔️', name:'战意凛然', desc:'战斗攻击+10%/级',
+    maxLevel:3, costFn:(lv)=>100*(lv+1), effect:(lv)=>`+${lv*10}%攻击` },
+  { id:'idle_efficiency', icon:'🔄', name:'挂机精进', desc:'挂机效率+20%/级',
+    maxLevel:3, costFn:(lv)=>80*(lv+1), effect:(lv)=>`+${lv*20}%挂机效率` },
+  { id:'crit_boost', icon:'🎯', name:'锐眼识破', desc:'暴击率+5%/级',
+    maxLevel:3, costFn:(lv)=>100*(lv+1), effect:(lv)=>`+${lv*5}%暴击率` },
 ];
 
 // ============================================================
@@ -1297,21 +1320,36 @@ function getPlayerBattleStats() {
   const bonuses = getRealmBonuses();
   // 基础属性随境界提升
   const baseHP = 100 + info.realmIndex * 60 + (info.subLevel - 1) * 20;
-  const baseATK = 15 + info.realmIndex * 12 + (info.subLevel - 1) * 4;
+  let baseATK = 15 + info.realmIndex * 12 + (info.subLevel - 1) * 4;
   const baseDEF = 3 + info.realmIndex * 3 + (info.subLevel - 1) * 1;
+  
+  // 战斗攻击加成（局外养成）
+  const atkBoost = getAbilityLevel('battle_atk');
+  if (atkBoost > 0) baseATK = Math.floor(baseATK * (1 + atkBoost * 0.1));
   
   // 法宝加成
   let bonusHP = 0, bonusATK = 0, bonusDEF = 0;
   const artifactBonuses = { '凡品':{hp:10,atk:2,def:1}, '良品':{hp:20,atk:5,def:2}, '精良':{hp:40,atk:10,def:4}, '稀有':{hp:80,atk:20,def:8}, '史诗':{hp:150,atk:40,def:15}, '传说':{hp:300,atk:80,def:30} };
   meta.equippedArtifacts.forEach(artifactId => {
-    const item = G.ownedItems.find(i => i.itemId === artifactId || i.itemName === artifactId);
+    const item = G.ownedItems.find(i => i.itemName === artifactId || i.name === artifactId);
     if (item) {
-      const bonus = artifactBonuses[item.quality] || artifactBonuses['凡品'];
+      // 统一品质名：如果是key则转为name
+      let qName = item.quality;
+      const qObj = QUALITIES.find(q => q.key === qName);
+      if (qObj) qName = qObj.name;
+      const bonus = artifactBonuses[qName] || artifactBonuses['凡品'];
       bonusHP += bonus.hp;
       bonusATK += bonus.atk;
       bonusDEF += bonus.def;
     }
   });
+  
+  // 渡劫期全属性+50%
+  if (bonuses.allStatBoost > 0) {
+    bonusHP = Math.floor(bonusHP * 1.5);
+    bonusATK = Math.floor(bonusATK * 1.5);
+    bonusDEF = Math.floor(bonusDEF * 1.5);
+  }
   
   return {
     hp: baseHP + bonusHP,
@@ -1323,22 +1361,30 @@ function getPlayerBattleStats() {
 }
 
 // 体力系统
+function getStaminaMax() {
+  return 5 + getAbilityLevel('stamina_boost') * 2;
+}
 function getStamina() {
-  // 恢复体力：每30分钟1点
+  const max = getStaminaMax();
   if (meta.lastStaminaRecover === 0) meta.lastStaminaRecover = Date.now();
+  const recoverRate = getAbilityLevel('stamina_recover') > 0 ? 0.5 + getAbilityLevel('stamina_recover') * 0.5 : 1;
+  const recoverInterval = 30 * 60 * 1000 / recoverRate;
   const elapsed = Date.now() - meta.lastStaminaRecover;
-  const recovered = Math.floor(elapsed / (30 * 60 * 1000));
-  if (recovered > 0 && meta.stamina < 5) {
-    meta.stamina = Math.min(5, meta.stamina + recovered);
+  const recovered = Math.floor(elapsed / recoverInterval);
+  if (recovered > 0 && meta.stamina < max) {
+    meta.stamina = Math.min(max, meta.stamina + recovered);
     meta.lastStaminaRecover = Date.now();
   }
   return meta.stamina;
 }
 
 function getNextStaminaTime() {
-  if (meta.stamina >= 5) return 0;
+  const max = getStaminaMax();
+  if (meta.stamina >= max) return 0;
+  const recoverRate = getAbilityLevel('stamina_recover') > 0 ? 0.5 + getAbilityLevel('stamina_recover') * 0.5 : 1;
+  const recoverInterval = 30 * 60 * 1000 / recoverRate;
   const elapsed = Date.now() - meta.lastStaminaRecover;
-  const remaining = 30 * 60 * 1000 - (elapsed % (30 * 60 * 1000));
+  const remaining = recoverInterval - (elapsed % recoverInterval);
   return Math.ceil(remaining / 1000);
 }
 
@@ -1354,11 +1400,18 @@ function getIdleBattleRate() {
   const monster = getMonsterForLevel(idleLevel);
   const winRate = 0.8;
   const battlesPerHour = 6;
-  return {
+  const rate = {
     lingshiPerHour: Math.floor(monster.rewardLingshi * battlesPerHour * winRate),
     xiuweiPerHour: Math.floor(monster.rewardXiuwei * battlesPerHour * winRate),
     monster: monster,
   };
+  // 挂机效率加成（局外养成）
+  const idleBoost = getAbilityLevel('idle_efficiency');
+  if (idleBoost > 0) {
+    rate.lingshiPerHour = Math.floor(rate.lingshiPerHour * (1 + idleBoost * 0.2));
+    rate.xiuweiPerHour = Math.floor(rate.xiuweiPerHour * (1 + idleBoost * 0.2));
+  }
+  return rate;
 }
 
 function getPendingBattleReward() {
@@ -1383,6 +1436,17 @@ function claimBattleReward() {
   showAnnouncement(`挂机历练收获：${reward.lingshi}灵石、${reward.xiuwei}修为！`);
   updatePlayerUI();
   renderBattlePanel();
+}
+
+function buyStamina() {
+  if (player.lingshi < 200) { showAnnouncement('灵石不足'); return; }
+  if (getStamina() >= getStaminaMax()) { showAnnouncement('体力已满'); return; }
+  player.lingshi -= 200;
+  meta.stamina++;
+  saveMeta();
+  updatePlayerUI();
+  renderBattlePanel();
+  showToast('体力+1');
 }
 
 // 战斗状态
@@ -1425,7 +1489,7 @@ function battleNextRound() {
   // 玩家攻击
   const playerDmg = Math.max(1, bs.playerATK - bs.monsterDEF + Math.floor(Math.random() * 5));
   // 暴击概率（境界越高暴击率越高）
-  const critChance = 0.1 + getRealmInfo().realmIndex * 0.03;
+  const critChance = 0.1 + getRealmInfo().realmIndex * 0.03 + getAbilityLevel('crit_boost') * 0.05;
   const isCrit = Math.random() < critChance;
   const actualPlayerDmg = isCrit ? Math.floor(playerDmg * 1.8) : playerDmg;
   bs.monsterHP -= actualPlayerDmg;
@@ -1467,14 +1531,22 @@ function finishBattle() {
   let rewardLingshi = 0, rewardXiuwei = 0;
   
   if (bs.result === 'win') {
-    rewardLingshi = bs.monster.rewardLingshi || 0;
-    rewardXiuwei = bs.monster.rewardXiuwei || 0;
+    // P1-3: 战斗奖励随境界加成
+    const realmMultiplier = 1 + getRealmInfo().realmIndex * 0.1;
+    rewardLingshi = Math.floor((bs.monster.rewardLingshi || 0) * realmMultiplier);
+    rewardXiuwei = Math.floor((bs.monster.rewardXiuwei || 0) * realmMultiplier);
     player.lingshi += rewardLingshi;
     meta.xiuwei += rewardXiuwei;
     meta.battleLevel++;
     if (meta.battleLevel > meta.maxBattleLevel) meta.maxBattleLevel = meta.battleLevel;
+    // P1-2: 战斗额外奖励（BOSS战有概率获得神识/功德）
+    let extraMsg = '';
+    if (bs.monster.isBoss) {
+      if (Math.random() < 0.5) { player.shenshi = (player.shenshi||0) + 5; extraMsg += ' 神识+5！'; }
+      if (Math.random() < 0.3) { player.gongde = (player.gongde||0) + 1; extraMsg += ' 功德+1！'; }
+    }
     saveMeta();
-    showToast(`胜利！获得${rewardLingshi}灵石、${rewardXiuwei}修为`, true);
+    showToast(`胜利！获得${rewardLingshi}灵石、${rewardXiuwei}修为${extraMsg}`, true);
   } else {
     showToast('战败...无损失，再接再厉');
   }
@@ -1560,7 +1632,7 @@ function meditate(cost) {
   syncTimeXiuwei();
   // 灵石加速：消耗灵石立即获得修为（加速方式）
   const info = getRealmInfo();
-  const efficiency = 1 + info.realmIndex * 0.1;
+  const efficiency = 1 + info.realmIndex * 0.3;
   const xiuweiGained = Math.floor(cost / 10 * efficiency);
   meta.xiuwei += xiuweiGained;
   saveMeta();
@@ -1791,8 +1863,9 @@ function renderBattlePanel() {
   let html = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
       <div style="font-size:0.9rem;">第 <strong style="color:var(--gold);font-size:1.2rem;" class="text-numeric">${meta.battleLevel}</strong> 关</div>
-      <div style="font-size:0.85rem;">⚡ 体力：<strong class="text-numeric" style="color:var(--gold);">${stamina}</strong>/5 ${nextTimeStr?'<span style="font-size:0.7rem;opacity:0.6;">'+nextTimeStr+'</span>':''}</div>
+      <div style="font-size:0.85rem;">⚡ 体力：<strong class="text-numeric" style="color:var(--gold);">${stamina}</strong>/${getStaminaMax()} ${nextTimeStr?'<span style="font-size:0.7rem;opacity:0.6;">'+nextTimeStr+'</span>':''}</div>
     </div>
+    ${stamina < getStaminaMax() ? `<button class="btn btn-ghost" style="margin-top:4px;padding:2px 10px;font-size:0.7rem;" onclick="buyStamina()">💎 200灵石恢复1点体力</button>` : ''}
     `;
 
   // 挂机历练状态（只要通关过1关就显示）
@@ -1834,6 +1907,9 @@ function renderBattlePanel() {
         <div class="battle-stat-item"><div class="bsi-label">气血</div><div class="bsi-value">${playerStats.hp}</div></div>
         <div class="battle-stat-item"><div class="bsi-label">攻击</div><div class="bsi-value">${playerStats.atk}</div></div>
         <div class="battle-stat-item"><div class="bsi-label">防御</div><div class="bsi-value">${playerStats.def}</div></div>
+      </div>
+      <div style="font-size:0.65rem;opacity:0.6;text-align:center;margin-top:4px;">
+        境界基础 + 法宝加成${meta.equippedArtifacts.length > 0 ? '（'+meta.equippedArtifacts.length+'件）' : '（无）'}
       </div>
     </div>
     
@@ -1934,14 +2010,18 @@ function renderArtifactPanel() {
   for (let i = 0; i < 3; i++) {
     const artifactName = meta.equippedArtifacts[i];
     if (artifactName) {
-      const item = G.ownedItems.find(it => it.itemName === artifactName);
+      const item = G.ownedItems.find(it => it.itemName === artifactName || it.name === artifactName);
       if (item) {
         const bonuses = { '凡品':'+10HP/+2ATK', '良品':'+20HP/+5ATK', '精良':'+40HP/+10ATK', '稀有':'+80HP/+20ATK', '史诗':'+150HP/+40ATK', '传说':'+300HP/+80ATK' };
+        let qName = item.quality;
+        const qObj = QUALITIES.find(q => q.key === qName);
+        if (qObj) qName = qObj.name;
+        const dispName = item.itemName || item.name;
         html += `<div class="artifact-slot">
           <span class="as-icon">🔮</span>
-          <span class="as-name">${item.itemName}</span>
-          <span class="as-bonus">${bonuses[item.quality] || ''}</span>
-          <button class="as-btn" onclick="unequipArtifact('${item.itemName}')">卸下</button>
+          <span class="as-name">${dispName}</span>
+          <span class="as-bonus">${bonuses[qName] || ''}</span>
+          <button class="as-btn" onclick="unequipArtifact('${dispName}')">卸下</button>
         </div>`;
       }
     } else {
@@ -1950,15 +2030,22 @@ function renderArtifactPanel() {
   }
   
   // 显示可装备的藏品
-  const available = G.ownedItems.filter(it => !meta.equippedArtifacts.includes(it.itemName) && !it.realized);
+  const available = G.ownedItems.filter(it => {
+    const name = it.itemName || it.name;
+    return !meta.equippedArtifacts.includes(name);
+  });
   if (available.length > 0 && meta.equippedArtifacts.length < 3) {
     html += `<div style="font-size:0.75rem;opacity:0.6;margin-top:8px;margin-bottom:4px;">可装备：</div>`;
     available.slice(0, 5).forEach(item => {
+      let qName = item.quality;
+      const qObj = QUALITIES.find(q => q.key === qName);
+      if (qObj) qName = qObj.name;
+      const dispName = item.itemName || item.name;
       html += `<div class="artifact-slot">
         <span class="as-icon">🔮</span>
-        <span class="as-name">${item.itemName}</span>
-        <span class="as-bonus">${item.quality}</span>
-        <button class="as-btn" onclick="equipArtifact('${item.itemName}')">装备</button>
+        <span class="as-name">${dispName}</span>
+        <span class="as-bonus">${qName}</span>
+        <button class="as-btn" onclick="equipArtifact('${dispName}')">装备</button>
       </div>`;
     });
   }
@@ -2043,6 +2130,23 @@ function renderCultivationPanel() {
   });
   html += `</div>`;
 
+  // 拍卖加成汇总
+  const auctionBonuses = [];
+  if (info.realmIndex >= 1) auctionBonuses.push('透支出价解锁');
+  if (info.realmIndex >= 2) auctionBonuses.push('估值精度+10%');
+  if (info.realmIndex >= 3) auctionBonuses.push('15%概率额外线索');
+  if (info.realmIndex >= 4) auctionBonuses.push('入魔出价上限80%');
+  if (info.realmIndex >= 5) auctionBonuses.push('溢价补偿+20%');
+  if (info.realmIndex >= 6) auctionBonuses.push('秒杀阈值-5%');
+  if (info.realmIndex >= 7) auctionBonuses.push('全属性+50%');
+
+  html += `
+    <div style="background:rgba(200,168,76,0.08);border-radius:8px;padding:10px;margin-bottom:12px;">
+      <div style="font-size:0.85rem;font-weight:bold;margin-bottom:6px;color:var(--gold-dark);">拍卖加成汇总</div>
+      ${auctionBonuses.length > 0 ? auctionBonuses.map(b => `<div style="font-size:0.75rem;color:var(--jade);margin:2px 0;">✓ ${b}</div>`).join('') : '<div style="font-size:0.75rem;opacity:0.5;">暂无加成，提升境界解锁</div>'}
+    </div>
+  `;
+
   // 境界能力
   html += `<div style="font-size:0.9rem;font-weight:bold;margin-bottom:8px;">⚡ 境界能力</div><div style="font-size:0.8rem;line-height:1.8;">`;
   const abilities = [
@@ -2075,6 +2179,8 @@ function calculateTdaoEarned() {
   if (G.sessionProfit > 0) points += Math.floor(G.sessionProfit / 100);
   // 惩罚：走火入魔扣分
   points -= player.zhouhuo * 10;
+  // 战斗关卡贡献
+  points += meta.maxBattleLevel * 5;
   return Math.max(0, points);
 }
 
@@ -3529,7 +3635,7 @@ function settleMultiRound(forced, killWinner) {
     // P0修复：藏品自动变现为灵石，但不加入典当列表（避免双重变现）
     // 藏品记录到收藏页（仅展示，不可典当）
     G.currentWarehouse.items.forEach(item => {
-      G.ownedItems.push({ itemId:item.id, itemName:item.name, purchasePrice:Math.floor(finalPrice/G.currentWarehouse.itemCount), trueValue:item.value, quality:item.qualityName, warehouseName:G.currentWarehouse.name, realized:true });
+      G.ownedItems.push({ itemId:item.id, itemName:item.name, purchasePrice:Math.floor(finalPrice/G.currentWarehouse.itemCount), trueValue:item.value, quality:item.qualityName, warehouseName:G.currentWarehouse.name, cashed:true });
     });
 
     // 拍卖规则：高出竞拍价的出价平分给在场其他三人
@@ -3588,7 +3694,7 @@ function settleMultiRound(forced, killWinner) {
       killTriggered: G.killPriceTriggered,
     });
     if (isPlayerWinner) {
-      // P0修复：藏品自动变现为灵石（藏品标记realized=true不可再典当）
+      // P0修复：藏品自动变现为灵石（藏品标记cashed=true不可再典当，但仍可装备为法宝）
       const realizedValue = G.currentWarehouse.totalValue;
       player.lingshi += realizedValue;
       G.sessionProfit += whProfit;
@@ -3825,6 +3931,9 @@ function showSettlementPopup(winnerId, finalPrice) {
   document.getElementById('nextBtn').textContent = G.itemNum < G.totalItems ? '下一个仓库' : '查看总成绩';
   // 修复：显式设置 onclick，确保秒杀后能正确进入下一个仓库
   document.getElementById('nextBtn').onclick = () => nextItem();
+  // 单仓库结算时隐藏终局快捷入口
+  const settleEntryDiv = document.getElementById('settleEntryDiv');
+  if (settleEntryDiv) settleEntryDiv.style.display = 'none';
   playSfx('settle');
   overlay.classList.add('show');
 }
@@ -4081,19 +4190,15 @@ function endGame() {
     <div>⚡ 天道积分：<strong>+${tdaoEarned||0}</strong></div>
   </div>`;
   }
-  document.getElementById('nextBtn').textContent = '前往修炼坊市';
+  document.getElementById('nextBtn').textContent = '再来一局';
   document.getElementById('nextBtn').onclick = () => {
     document.getElementById('settlementOverlay').classList.remove('show');
-    openShop(false);
-    // 修改关闭按钮行为：关闭后回到开始界面（不刷新页面）
-    setTimeout(() => {
-      const closeBtn = document.querySelector('.shop-close');
-      if (closeBtn) {
-        closeBtn.textContent = '返回主界面';
-        closeBtn.onclick = () => { closeShop(); returnToStart(); };
-      }
-    }, 100);
+    returnToStart();
+    enterTierSelect();
   };
+  // 显示结算快捷入口（修仙/历练/坊市）
+  const settleEntryDiv = document.getElementById('settleEntryDiv');
+  if (settleEntryDiv) settleEntryDiv.style.display = 'flex';
   document.getElementById('settlementOverlay').classList.add('show');
 }
 
@@ -4142,6 +4247,9 @@ function returnToStart() {
   // 修复：恢复 nextBtn 的 onclick 为 nextItem
   document.getElementById('nextBtn').onclick = () => nextItem();
   document.getElementById('nextBtn').textContent = '下一个仓库';
+  // 重置终局快捷入口为隐藏
+  const settleEntryDiv = document.getElementById('settleEntryDiv');
+  if (settleEntryDiv) settleEntryDiv.style.display = 'none';
   updateStartDisplay();
   updatePlayerUI();
   renderCollection();
@@ -4221,8 +4329,8 @@ function hideComebackPanel() { document.getElementById('comebackOverlay').classL
 function comebackAction(method) {
   G.pendingComebackMethod = method;
   if (method === '典当藏品') {
-    // P0修复：过滤掉已自动变现的藏品（realized:true），只允许典当未变现的
-    const pawnableItems = G.ownedItems.map((item, i) => ({ item, i })).filter(x => !x.item.realized);
+    // P0修复：过滤掉已自动变现的藏品（cashed:true），只允许典当未变现的
+    const pawnableItems = G.ownedItems.map((item, i) => ({ item, i })).filter(x => !x.item.cashed);
     if (pawnableItems.length === 0) { showAnnouncement('无可典当藏品（拍得的藏品已自动变现）'); return; }
     hideComebackPanel();
     if (pawnableItems.length === 1) { executePawn(pawnableItems[0].i); }
@@ -4530,7 +4638,7 @@ function updateStartDisplay() {
   const idleReward = getPendingBattleReward();
   const idleStr = (meta.maxBattleLevel > 1 && (idleReward.lingshi > 0 || idleReward.xiuwei > 0))
     ? ` | 🔄挂机：+${idleReward.lingshi}💎+${idleReward.xiuwei}🔮` : '';
-  el.innerHTML += `<br>⚔️ 历练：第${meta.battleLevel}关（最高${meta.maxBattleLevel}关） | ⚡体力：${stamina}/5${idleStr}`;
+  el.innerHTML += `<br>⚔️ 历练：第${meta.battleLevel}关（最高${meta.maxBattleLevel}关） | ⚡体力：${stamina}/${getStaminaMax()}${idleStr}`;
 }
 updateStartDisplay();
 
