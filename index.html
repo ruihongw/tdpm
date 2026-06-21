@@ -338,6 +338,38 @@ body {
 .settlement-card .settle-desc { font-size:0.9rem; opacity:0.7; margin:12px 0 20px; line-height:1.8; }
 .settlement-card .warehouse-summary { font-size:0.8rem; margin:8px 0; padding:8px; background:rgba(43,43,43,0.04); border-radius:6px; line-height:1.6; }
 
+/* ===== 历练闯关 ===== */
+.battle-arena { background:linear-gradient(135deg,rgba(26,26,46,0.95),rgba(15,52,96,0.9)); border-radius:12px; padding:16px; color:white; min-height:300px; position:relative; overflow:hidden; }
+.battle-vs { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:12px; }
+.battle-fighter { flex:1; text-align:center; }
+.battle-fighter .bf-icon { font-size:2.5rem; margin-bottom:4px; }
+.battle-fighter .bf-name { font-size:0.85rem; font-weight:bold; margin-bottom:4px; }
+.battle-hp-bar { height:10px; background:rgba(255,255,255,0.15); border-radius:5px; overflow:hidden; margin-top:4px; }
+.battle-hp-fill { height:100%; border-radius:5px; transition:width 0.3s; }
+.battle-hp-fill.player { background:linear-gradient(90deg,#5dbb63,#3a8a40); }
+.battle-hp-fill.monster { background:linear-gradient(90deg,#e74c3c,#c0392b); }
+.battle-hp-text { font-size:0.7rem; margin-top:2px; font-family:var(--font-numeric); }
+.battle-vs-text { font-size:1.5rem; font-weight:bold; color:var(--gold); align-self:center; }
+.battle-log { max-height:100px; overflow-y:auto; font-size:0.75rem; line-height:1.6; margin-top:8px; padding:6px; background:rgba(0,0,0,0.2); border-radius:6px; }
+.battle-log .log-player { color:#7fdb7f; }
+.battle-log .log-monster { color:#ff8a80; }
+.battle-log .log-crit { color:var(--gold); font-weight:bold; }
+.battle-result { text-align:center; padding:20px; }
+.battle-result .result-title { font-family:'Ma Shan Zheng',serif; font-size:2rem; margin-bottom:8px; }
+.battle-result .result-win { color:var(--gold); text-shadow:0 0 16px rgba(200,168,76,0.6); }
+.battle-result .result-lose { color:#aaa; }
+.battle-reward { background:rgba(200,168,76,0.15); border:1px solid var(--gold); border-radius:8px; padding:12px; margin:12px 0; font-size:0.9rem; }
+.battle-stats-display { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin:8px 0; }
+.battle-stat-item { text-align:center; padding:6px; background:rgba(255,255,255,0.05); border-radius:6px; }
+.battle-stat-item .bsi-label { font-size:0.65rem; opacity:0.7; }
+.battle-stat-item .bsi-value { font-size:1rem; font-weight:bold; font-family:var(--font-numeric); color:var(--gold); }
+.artifact-slot { display:flex; align-items:center; gap:6px; padding:6px 8px; background:rgba(255,255,255,0.05); border:1px solid rgba(200,168,76,0.2); border-radius:6px; margin-bottom:4px; }
+.artifact-slot .as-icon { font-size:1rem; }
+.artifact-slot .as-name { flex:1; font-size:0.75rem; }
+.artifact-slot .as-bonus { font-size:0.65rem; opacity:0.7; color:var(--gold); }
+.artifact-slot .as-btn { padding:2px 8px; font-size:0.65rem; border-radius:4px; cursor:pointer; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.1); color:white; }
+.artifact-empty { text-align:center; padding:8px; border:1px dashed rgba(255,255,255,0.2); border-radius:6px; font-size:0.75rem; opacity:0.5; margin-bottom:4px; }
+
 /* ===== 修仙动画系统 ===== */
 .cultivation-scene { position:relative; width:200px; height:200px; margin:0 auto 16px; }
 .cultivation-disc { position:absolute; bottom:20px; left:50%; transform:translateX(-50%); width:160px; height:30px; background:radial-gradient(ellipse,rgba(200,168,76,0.3),transparent 70%); border-radius:50%; }
@@ -576,6 +608,7 @@ body {
   <button class="start-btn" onclick="enterTierSelect()">入局</button>
   <button class="btn btn-ghost" style="margin-top:12px;font-size:1rem;" onclick="openShop(true)">修炼坊市（局外养成）</button>
   <button class="btn btn-ghost" style="margin-top:8px;font-size:1rem;" onclick="openCultivation()">修仙洞府（挂机修炼）</button>
+  <button class="btn btn-ghost" style="margin-top:8px;font-size:1rem;" onclick="openBattle()">⚔️ 历练闯关</button>
   </div>
 </div>
 
@@ -774,6 +807,15 @@ body {
     <h3>修仙洞府</h3>
     <div id="cultivationContent" style="min-height:300px;"></div>
     <button class="btn btn-ghost" style="margin-top:12px;" onclick="closeCultivation()">返回</button>
+  </div>
+</div>
+
+<!-- 历练闯关 -->
+<div class="shop-overlay" id="battleOverlay">
+  <div class="shop-panel" style="max-width:420px;">
+    <h3>⚔️ 历练闯关</h3>
+    <div id="battleContent" style="min-height:400px;"></div>
+    <button class="btn btn-ghost" style="margin-top:12px;" onclick="closeBattle()">返回</button>
   </div>
 </div>
 
@@ -1186,6 +1228,238 @@ function getRealmInfo() {
   return { realmIndex:REALMS.length-1, realm:last, subLevel:last.subLevels, progress:1, nextXiuwei: xw };
 }
 
+// ============================================================
+//  历练闯关系统（Battle System）
+// ============================================================
+const MONSTERS = [
+  // 普通怪物
+  { id:'snake', name:'青蛇妖', icon:'🐍', hp:80, atk:12, def:3, desc:'盘踞山林的蛇妖，毒性温和', tier:1, rewardLingshi:50, rewardXiuwei:30 },
+  { id:'bat', name:'血翼蝠', icon:'🦇', hp:60, atk:15, def:2, desc:'吸血为生的妖蝠', tier:1, rewardLingshi:40, rewardXiuwei:25 },
+  { id:'spider', name:'毒蛛精', icon:'🕷️', hp:70, atk:14, def:4, desc:'吐丝结网的蜘蛛精', tier:1, rewardLingshi:45, rewardXiuwei:28 },
+  { id:'wolf', name:'苍狼妖', icon:'🐺', hp:90, atk:18, def:5, desc:'群居的狼妖，凶猛善战', tier:1, rewardLingshi:60, rewardXiuwei:35 },
+  { id:'skeleton', name:'骷髅兵', icon:'💀', hp:100, atk:16, def:6, desc:'古战场亡魂化成的骷髅', tier:2, rewardLingshi:80, rewardXiuwei:50 },
+  { id:'ghost', name:'幽魂', icon:'👻', hp:85, atk:20, def:4, desc:'飘荡的幽魂，攻击诡异', tier:2, rewardLingshi:75, rewardXiuwei:48 },
+  { id:'zombie', name:'僵尸', icon:'🧟', hp:130, atk:18, def:8, desc:'不腐的僵尸，皮糙肉厚', tier:2, rewardLingshi:90, rewardXiuwei:55 },
+  { id:'tree', name:'树妖', icon:'🌳', hp:150, atk:22, def:10, desc:'修炼成精的古树', tier:2, rewardLingshi:100, rewardXiuwei:60 },
+  { id:'flame', name:'炎魔', icon:'🔥', hp:120, atk:28, def:7, desc:'烈焰化成的魔物', tier:3, rewardLingshi:150, rewardXiuwei:90 },
+  { id:'ice', name:'冰魄', icon:'❄️', hp:110, atk:30, def:9, desc:'寒冰凝聚的妖灵', tier:3, rewardLingshi:140, rewardXiuwei:85 },
+  { id:'thunder', name:'雷兽', icon:'⚡', hp:100, atk:35, def:6, desc:'雷电化形的凶兽', tier:3, rewardLingshi:160, rewardXiuwei:95 },
+  { id:'dragon', name:'蛟龙', icon:'🐲', hp:200, atk:32, def:12, desc:'未化形的蛟龙，实力强悍', tier:3, rewardLingshi:200, rewardXiuwei:120 },
+  // 精英怪物
+  { id:'fox', name:'九尾狐妖', icon:'🦊', hp:180, atk:30, def:10, desc:'九尾狐妖，魅惑之力强大', tier:3, rewardLingshi:180, rewardXiuwei:110 },
+  { id:'tiger', name:'白虎', icon:'🐅', hp:220, atk:35, def:14, desc:'上古白虎后裔', tier:4, rewardLingshi:250, rewardXiuwei:150 },
+  // BOSS级 - 仙剑NPC
+  { id:'bymaster', name:'拜月教主', icon:'🧙‍♂️', hp:300, atk:40, def:15, desc:'拜月教主，妄图毁灭世界', tier:4, rewardLingshi:500, rewardXiuwei:300, isBoss:true },
+  { id:'swordmaster', name:'剑圣', icon:'⚔️', hp:280, atk:45, def:12, desc:'蜀山剑圣，剑术通神', tier:4, rewardLingshi:450, rewardXiuwei:280, isBoss:true },
+  { id:'demonking', name:'魔尊', icon:'👹', hp:350, atk:48, def:18, desc:'魔界至尊，实力恐怖', tier:5, rewardLingshi:800, rewardXiuwei:500, isBoss:true },
+  { id:'shushan', name:'蜀山长老', icon:'🧓', hp:320, atk:42, def:20, desc:'蜀山派长老，法力深厚', tier:5, rewardLingshi:700, rewardXiuwei:450, isBoss:true },
+];
+
+// 仙剑NPC对手（偶尔出现）
+const NPC_OPPONENTS = [
+  { name:'李逍遥', icon:'🗡️', hp:250, atk:38, def:12, desc:'仙剑奇侠传主角', rewardLingshi:400, rewardXiuwei:250 },
+  { name:'赵灵儿', icon:'🌸', hp:200, atk:35, def:10, desc:'女娲后人', rewardLingshi:350, rewardXiuwei:220 },
+  { name:'林月如', icon:'🏹', hp:230, atk:36, def:11, desc:'林家堡大小姐', rewardLingshi:380, rewardXiuwei:240 },
+  { name:'阿奴', icon:'🌺', hp:190, atk:40, def:8, desc:'苗疆少女', rewardLingshi:360, rewardXiuwei:230 },
+  { name:'酒剑仙', icon:'🍶', hp:270, atk:44, def:10, desc:'嗜酒如命的剑仙', rewardLingshi:420, rewardXiuwei:270 },
+  { name:'沈欺霜', icon:'❄️', hp:240, atk:39, def:13, desc:'冰山美人', rewardLingshi:390, rewardXiuwei:250 },
+];
+
+// 根据关卡获取怪物
+function getMonsterForLevel(level) {
+  // 每5关一个BOSS，每10关一个NPC对手
+  if (level % 10 === 0) {
+    const npc = NPC_OPPONENTS[Math.floor(Math.random() * NPC_OPPONENTS.length)];
+    return { ...npc, isNPC:true, tier:Math.min(5, Math.ceil(level/10)) };
+  }
+  if (level % 5 === 0) {
+    const bosses = MONSTERS.filter(m => m.isBoss && m.tier <= Math.ceil(level/5));
+    const pool = bosses.length > 0 ? bosses : MONSTERS.filter(m => m.tier <= Math.ceil(level/5));
+    return { ...pool[Math.floor(Math.random() * pool.length)] };
+  }
+  // 普通怪物：根据关卡选择对应tier
+  const maxTier = Math.min(4, Math.ceil(level / 3));
+  const pool = MONSTERS.filter(m => !m.isBoss && m.tier <= maxTier);
+  const monster = { ...pool[Math.floor(Math.random() * pool.length)] };
+  // 关卡越高怪物越强
+  const scale = 1 + (level - 1) * 0.15;
+  monster.hp = Math.floor(monster.hp * scale);
+  monster.atk = Math.floor(monster.atk * scale);
+  monster.def = Math.floor(monster.def * scale);
+  monster.rewardLingshi = Math.floor(monster.rewardLingshi * scale);
+  monster.rewardXiuwei = Math.floor(monster.rewardXiuwei * scale);
+  return monster;
+}
+
+// 计算玩家战斗属性（基于境界+法宝）
+function getPlayerBattleStats() {
+  const info = getRealmInfo();
+  const bonuses = getRealmBonuses();
+  // 基础属性随境界提升
+  const baseHP = 100 + info.realmIndex * 60 + (info.subLevel - 1) * 20;
+  const baseATK = 15 + info.realmIndex * 12 + (info.subLevel - 1) * 4;
+  const baseDEF = 3 + info.realmIndex * 3 + (info.subLevel - 1) * 1;
+  
+  // 法宝加成
+  let bonusHP = 0, bonusATK = 0, bonusDEF = 0;
+  const artifactBonuses = { '凡品':{hp:10,atk:2,def:1}, '良品':{hp:20,atk:5,def:2}, '精良':{hp:40,atk:10,def:4}, '稀有':{hp:80,atk:20,def:8}, '史诗':{hp:150,atk:40,def:15}, '传说':{hp:300,atk:80,def:30} };
+  meta.equippedArtifacts.forEach(artifactId => {
+    const item = G.ownedItems.find(i => i.itemId === artifactId || i.itemName === artifactId);
+    if (item) {
+      const bonus = artifactBonuses[item.quality] || artifactBonuses['凡品'];
+      bonusHP += bonus.hp;
+      bonusATK += bonus.atk;
+      bonusDEF += bonus.def;
+    }
+  });
+  
+  return {
+    hp: baseHP + bonusHP,
+    atk: baseATK + bonusATK,
+    def: baseDEF + bonusDEF,
+    realmName: info.realm.name,
+    realmIndex: info.realmIndex,
+  };
+}
+
+// 体力系统
+function getStamina() {
+  // 恢复体力：每30分钟1点
+  if (meta.lastStaminaRecover === 0) meta.lastStaminaRecover = Date.now();
+  const elapsed = Date.now() - meta.lastStaminaRecover;
+  const recovered = Math.floor(elapsed / (30 * 60 * 1000));
+  if (recovered > 0 && meta.stamina < 5) {
+    meta.stamina = Math.min(5, meta.stamina + recovered);
+    meta.lastStaminaRecover = Date.now();
+  }
+  return meta.stamina;
+}
+
+function getNextStaminaTime() {
+  if (meta.stamina >= 5) return 0;
+  const elapsed = Date.now() - meta.lastStaminaRecover;
+  const remaining = 30 * 60 * 1000 - (elapsed % (30 * 60 * 1000));
+  return Math.ceil(remaining / 1000);
+}
+
+// 战斗状态
+let battleState = null;
+
+function startBattle() {
+  if (getStamina() < 1) { showAnnouncement('体力不足，请稍后再来'); return; }
+  meta.stamina--;
+  saveMeta();
+  
+  const monster = getMonsterForLevel(meta.battleLevel);
+  const playerStats = getPlayerBattleStats();
+  
+  battleState = {
+    monster: monster,
+    playerHP: playerStats.hp,
+    playerMaxHP: playerStats.hp,
+    playerATK: playerStats.atk,
+    playerDEF: playerStats.def,
+    monsterHP: monster.hp,
+    monsterMaxHP: monster.hp,
+    monsterATK: monster.atk,
+    monsterDEF: monster.def,
+    round: 0,
+    log: [],
+    finished: false,
+    result: null,
+  };
+  
+  renderBattleUI();
+  // 开始自动战斗
+  delay(battleNextRound, 800);
+}
+
+function battleNextRound() {
+  if (!battleState || battleState.finished) return;
+  battleState.round++;
+  const bs = battleState;
+  
+  // 玩家攻击
+  const playerDmg = Math.max(1, bs.playerATK - bs.monsterDEF + Math.floor(Math.random() * 5));
+  // 暴击概率（境界越高暴击率越高）
+  const critChance = 0.1 + getRealmInfo().realmIndex * 0.03;
+  const isCrit = Math.random() < critChance;
+  const actualPlayerDmg = isCrit ? Math.floor(playerDmg * 1.8) : playerDmg;
+  bs.monsterHP -= actualPlayerDmg;
+  bs.log.push({ side:'player', dmg:actualPlayerDmg, crit:isCrit, monsterHP:Math.max(0, bs.monsterHP) });
+  
+  if (bs.monsterHP <= 0) {
+    bs.finished = true;
+    bs.result = 'win';
+    renderBattleUI();
+    delay(finishBattle, 1000);
+    return;
+  }
+  
+  renderBattleUI();
+  
+  // 怪物反击
+  delay(() => {
+    if (!battleState || battleState.finished) return;
+    const monsterDmg = Math.max(1, bs.monsterATK - bs.playerDEF + Math.floor(Math.random() * 4));
+    bs.playerHP -= monsterDmg;
+    bs.log.push({ side:'monster', dmg:monsterDmg, playerHP:Math.max(0, bs.playerHP) });
+    
+    if (bs.playerHP <= 0) {
+      bs.finished = true;
+      bs.result = 'lose';
+      renderBattleUI();
+      delay(finishBattle, 1000);
+      return;
+    }
+    
+    renderBattleUI();
+    delay(battleNextRound, 700);
+  }, 600);
+}
+
+function finishBattle() {
+  if (!battleState) return;
+  const bs = battleState;
+  let rewardLingshi = 0, rewardXiuwei = 0;
+  
+  if (bs.result === 'win') {
+    rewardLingshi = bs.monster.rewardLingshi || 0;
+    rewardXiuwei = bs.monster.rewardXiuwei || 0;
+    player.lingshi += rewardLingshi;
+    meta.xiuwei += rewardXiuwei;
+    meta.battleLevel++;
+    saveMeta();
+    showToast(`胜利！获得${rewardLingshi}灵石、${rewardXiuwei}修为`, true);
+  } else {
+    showToast('战败...无损失，再接再厉');
+  }
+  
+  // 显示战斗结果
+  renderBattleResult(bs.result, rewardLingshi, rewardXiuwei);
+  battleState = null;
+}
+
+function equipArtifact(itemName) {
+  if (meta.equippedArtifacts.length >= 3) {
+    showAnnouncement('法宝栏已满（最多3件），请先卸下');
+    return;
+  }
+  if (!meta.equippedArtifacts.includes(itemName)) {
+    meta.equippedArtifacts.push(itemName);
+    saveMeta();
+    renderArtifactPanel();
+    showToast('法宝已装备');
+  }
+}
+
+function unequipArtifact(itemName) {
+  meta.equippedArtifacts = meta.equippedArtifacts.filter(a => a !== itemName);
+  saveMeta();
+  renderArtifactPanel();
+  showToast('法宝已卸下');
+}
+
 // 获取境界带来的能力加成
 function getRealmBonuses() {
   const info = getRealmInfo();
@@ -1205,7 +1479,7 @@ function getRealmBonuses() {
 }
 
 // 存档数据
-let meta = { tdaoPoints:0, abilities:{}, globalLingshi:null, xiuwei:0, lastMeditate:0 };
+let meta = { tdaoPoints:0, abilities:{}, globalLingshi:null, xiuwei:0, lastMeditate:0, stamina:5, lastStaminaRecover:0, battleLevel:1, equippedArtifacts:[] };
 
 function loadMeta() {
   try {
@@ -1217,6 +1491,10 @@ function loadMeta() {
       meta.globalLingshi = (typeof data.globalLingshi === 'number') ? data.globalLingshi : null;
       meta.xiuwei = data.xiuwei || 0;
       meta.lastMeditate = data.lastMeditate || 0;
+      meta.stamina = typeof data.stamina === 'number' ? data.stamina : 5;
+      meta.lastStaminaRecover = data.lastStaminaRecover || 0;
+      meta.battleLevel = data.battleLevel || 1;
+      meta.equippedArtifacts = data.equippedArtifacts || [];
     }
   } catch(e) { console.warn('存档读取失败', e); }
 }
@@ -1422,6 +1700,204 @@ function closeCultivation() {
   // 关闭时结算时间修为
   syncTimeXiuwei();
   saveMeta();
+}
+
+function openBattle() {
+  renderBattlePanel();
+  document.getElementById('battleOverlay').classList.add('show');
+  // 体力恢复定时刷新
+  if (window._battleTimer) clearInterval(window._battleTimer);
+  window._battleTimer = setInterval(() => {
+    if (document.getElementById('battleOverlay').classList.contains('show') && !battleState) {
+      renderBattlePanel();
+    }
+  }, 5000);
+}
+function closeBattle() {
+  document.getElementById('battleOverlay').classList.remove('show');
+  if (window._battleTimer) { clearInterval(window._battleTimer); window._battleTimer = null; }
+}
+
+function renderBattlePanel() {
+  const el = document.getElementById('battleContent');
+  if (!el) return;
+  
+  if (battleState) {
+    renderBattleUI();
+    return;
+  }
+  
+  const stamina = getStamina();
+  const nextTime = getNextStaminaTime();
+  const playerStats = getPlayerBattleStats();
+  const monster = getMonsterForLevel(meta.battleLevel);
+  
+  let nextTimeStr = '';
+  if (nextTime > 0) {
+    const min = Math.floor(nextTime / 60);
+    const sec = nextTime % 60;
+    nextTimeStr = `下一点体力：${min}分${sec}秒`;
+  }
+  
+  let html = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div style="font-size:0.9rem;">第 <strong style="color:var(--gold);font-size:1.2rem;" class="text-numeric">${meta.battleLevel}</strong> 关</div>
+      <div style="font-size:0.85rem;">⚡ 体力：<strong class="text-numeric" style="color:var(--gold);">${stamina}</strong>/5 ${nextTimeStr?'<span style="font-size:0.7rem;opacity:0.6;">'+nextTimeStr+'</span>':''}</div>
+    </div>
+    
+    <div class="battle-arena">
+      <div style="text-align:center;margin-bottom:12px;">
+        <div style="font-size:0.8rem;opacity:0.7;">即将挑战</div>
+        <div style="font-size:3rem;">${monster.icon}</div>
+        <div style="font-size:1.1rem;font-weight:bold;color:${monster.isNPC?'var(--gold)':'white'};">${monster.name}</div>
+        <div style="font-size:0.75rem;opacity:0.6;">${monster.desc}</div>
+        ${monster.isNPC?'<div style="color:var(--gold);font-size:0.7rem;margin-top:2px;">★ 仙剑奇侠</div>':''}
+        ${monster.isBoss?'<div style="color:var(--vermilion);font-size:0.7rem;margin-top:2px;">★★ BOSS</div>':''}
+      </div>
+      
+      <div class="battle-stats-display">
+        <div class="battle-stat-item"><div class="bsi-label">气血</div><div class="bsi-value">${monster.hp}</div></div>
+        <div class="battle-stat-item"><div class="bsi-label">攻击</div><div class="bsi-value">${monster.atk}</div></div>
+        <div class="battle-stat-item"><div class="bsi-label">防御</div><div class="bsi-value">${monster.def}</div></div>
+      </div>
+    </div>
+    
+    <div style="margin:12px 0;padding:10px;background:rgba(43,43,43,0.04);border-radius:8px;">
+      <div style="font-size:0.8rem;font-weight:bold;margin-bottom:6px;">${getRealmInfo().realm.icon} ${getRealmInfo().realm.name}${getRealmInfo().subLevel}层 战力</div>
+      <div class="battle-stats-display">
+        <div class="battle-stat-item"><div class="bsi-label">气血</div><div class="bsi-value">${playerStats.hp}</div></div>
+        <div class="battle-stat-item"><div class="bsi-label">攻击</div><div class="bsi-value">${playerStats.atk}</div></div>
+        <div class="battle-stat-item"><div class="bsi-label">防御</div><div class="bsi-value">${playerStats.def}</div></div>
+      </div>
+    </div>
+    
+    <button class="btn btn-primary" style="width:100%;padding:12px;font-size:1.1rem;${stamina<1?'opacity:0.5;':''}" ${stamina<1?'disabled':''} onclick="startBattle()">
+      ${stamina>=1?'⚔️ 开始战斗':'体力不足'}
+    </button>
+    
+    <div style="margin-top:16px;">
+      <div style="font-size:0.85rem;font-weight:bold;margin-bottom:8px;">🔮 法宝装备（${meta.equippedArtifacts.length}/3）</div>
+      <div id="artifactSlots"></div>
+    </div>
+  `;
+  
+  el.innerHTML = html;
+  renderArtifactPanel();
+}
+
+function renderBattleUI() {
+  if (!battleState) return;
+  const bs = battleState;
+  const playerHPPercent = (bs.playerHP / bs.playerMaxHP) * 100;
+  const monsterHPPercent = (bs.monsterHP / bs.monsterMaxHP) * 100;
+  
+  let logHtml = bs.log.slice(-5).map(l => {
+    if (l.side === 'player') {
+      return `<div class="log-player">你${l.crit?'<span class="log-crit">暴击</span>':''}造成 <strong>${l.dmg}</strong> 伤害${l.monsterHP<=0?' — 击败！':''}</div>`;
+    } else {
+      return `<div class="log-monster">${bs.monster.name}造成 <strong>${l.dmg}</strong> 伤害${l.playerHP<=0?' — 你被击败':''}</div>`;
+    }
+  }).join('');
+  
+  let resultHtml = '';
+  if (bs.finished) {
+    resultHtml = `<div class="battle-result">
+      <div class="result-title ${bs.result==='win'?'result-win':'result-lose'}">${bs.result==='win'?'🏆 胜利':'💀 战败'}</div>
+    </div>`;
+  }
+  
+  const el = document.getElementById('battleContent');
+  if (el) {
+    el.innerHTML = `
+      <div class="battle-arena">
+        <div class="battle-vs">
+          <div class="battle-fighter">
+            <div class="bf-icon">${getRealmInfo().realm.icon}</div>
+            <div class="bf-name">你</div>
+            <div class="battle-hp-bar"><div class="battle-hp-fill player" style="width:${playerHPPercent}%;"></div></div>
+            <div class="battle-hp-text">${bs.playerHP}/${bs.playerMaxHP}</div>
+          </div>
+          <div class="battle-vs-text">VS</div>
+          <div class="battle-fighter">
+            <div class="bf-icon">${bs.monster.icon}</div>
+            <div class="bf-name">${bs.monster.name}</div>
+            <div class="battle-hp-bar"><div class="battle-hp-fill monster" style="width:${monsterHPPercent}%;"></div></div>
+            <div class="battle-hp-text">${bs.monsterHP}/${bs.monsterMaxHP}</div>
+          </div>
+        </div>
+        <div style="text-align:center;font-size:0.75rem;opacity:0.6;margin-bottom:8px;">第 ${bs.round} 回合</div>
+        <div class="battle-log">${logHtml}</div>
+        ${resultHtml}
+      </div>
+    `;
+  }
+}
+
+function renderBattleResult(result, rewardLingshi, rewardXiuwei) {
+  const el = document.getElementById('battleContent');
+  if (!el) return;
+  let html = `<div class="battle-arena"><div class="battle-result">`;
+  if (result === 'win') {
+    html += `
+      <div class="result-title result-win">🏆 胜利！</div>
+      <div class="battle-reward">
+        <div>💎 获得 <strong class="text-numeric" style="color:var(--gold);">${rewardLingshi}</strong> 灵石</div>
+        <div>🔮 获得 <strong class="text-numeric" style="color:var(--gold);">${rewardXiuwei}</strong> 修为</div>
+      </div>
+      <div style="font-size:0.8rem;opacity:0.7;margin-bottom:12px;">已通关第 ${meta.battleLevel - 1} 关，下一关：第 ${meta.battleLevel} 关</div>
+    `;
+  } else {
+    html += `
+      <div class="result-title result-lose">💀 战败</div>
+      <div style="font-size:0.85rem;opacity:0.7;margin-bottom:12px;">无损失，再接再厉！</div>
+      <div style="font-size:0.8rem;opacity:0.6;">当前关卡：第 ${meta.battleLevel} 关</div>
+    `;
+  }
+  html += `</div>
+    <button class="btn btn-primary" style="width:100%;padding:10px;margin-top:12px;" onclick="renderBattlePanel()">继续挑战</button>
+  </div>`;
+  el.innerHTML = html;
+}
+
+function renderArtifactPanel() {
+  const el = document.getElementById('artifactSlots');
+  if (!el) return;
+  
+  // 显示已装备的法宝
+  let html = '';
+  for (let i = 0; i < 3; i++) {
+    const artifactName = meta.equippedArtifacts[i];
+    if (artifactName) {
+      const item = G.ownedItems.find(it => it.itemName === artifactName);
+      if (item) {
+        const bonuses = { '凡品':'+10HP/+2ATK', '良品':'+20HP/+5ATK', '精良':'+40HP/+10ATK', '稀有':'+80HP/+20ATK', '史诗':'+150HP/+40ATK', '传说':'+300HP/+80ATK' };
+        html += `<div class="artifact-slot">
+          <span class="as-icon">🔮</span>
+          <span class="as-name">${item.itemName}</span>
+          <span class="as-bonus">${bonuses[item.quality] || ''}</span>
+          <button class="as-btn" onclick="unequipArtifact('${item.itemName}')">卸下</button>
+        </div>`;
+      }
+    } else {
+      html += `<div class="artifact-empty">空余法宝槽 ${i + 1}</div>`;
+    }
+  }
+  
+  // 显示可装备的藏品
+  const available = G.ownedItems.filter(it => !meta.equippedArtifacts.includes(it.itemName) && !it.realized);
+  if (available.length > 0 && meta.equippedArtifacts.length < 3) {
+    html += `<div style="font-size:0.75rem;opacity:0.6;margin-top:8px;margin-bottom:4px;">可装备：</div>`;
+    available.slice(0, 5).forEach(item => {
+      html += `<div class="artifact-slot">
+        <span class="as-icon">🔮</span>
+        <span class="as-name">${item.itemName}</span>
+        <span class="as-bonus">${item.quality}</span>
+        <button class="as-btn" onclick="equipArtifact('${item.itemName}')">装备</button>
+      </div>`;
+    });
+  }
+  
+  el.innerHTML = html;
 }
 
 function renderCultivationPanel() {
@@ -3983,6 +4459,9 @@ function updateStartDisplay() {
   const info = getRealmInfo();
   const pending = getPendingXiuwei();
   el.innerHTML += `<br>${info.realm.icon} 境界：<strong style="color:var(--vermilion);">${info.realm.name}${info.subLevel}层</strong> | 修为：${meta.xiuwei + pending}${pending>0?' <span style="color:var(--jade);font-size:0.75rem;">(+'+pending+'待结算)</span>':''}`;
+  // 显示历练信息
+  const stamina = getStamina();
+  el.innerHTML += `<br>⚔️ 历练：第${meta.battleLevel}关 | ⚡体力：${stamina}/5`;
 }
 updateStartDisplay();
 
