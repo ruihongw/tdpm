@@ -1342,6 +1342,49 @@ function getNextStaminaTime() {
   return Math.ceil(remaining / 1000);
 }
 
+// 挂机历练：在已通关最高关卡自动战斗累积奖励
+function getIdleBattleLevel() {
+  // 挂机关卡 = 最高已通关关卡（maxBattleLevel - 1，但至少1）
+  return Math.max(1, meta.maxBattleLevel - 1);
+}
+
+function getIdleBattleRate() {
+  // 每小时挂机收益：约6场战斗（每10分钟1场），胜率80%
+  const idleLevel = getIdleBattleLevel();
+  const monster = getMonsterForLevel(idleLevel);
+  const winRate = 0.8;
+  const battlesPerHour = 6;
+  return {
+    lingshiPerHour: Math.floor(monster.rewardLingshi * battlesPerHour * winRate),
+    xiuweiPerHour: Math.floor(monster.rewardXiuwei * battlesPerHour * winRate),
+    monster: monster,
+  };
+}
+
+function getPendingBattleReward() {
+  if (meta.maxBattleLevel <= 1) return { lingshi:0, xiuwei:0 };
+  if (!meta.lastBattleReward) meta.lastBattleReward = Date.now();
+  const hours = Math.min(8, (Date.now() - meta.lastBattleReward) / 3600000); // 最多8小时
+  if (hours < 0.05) return { lingshi:0, xiuwei:0 };
+  const rate = getIdleBattleRate();
+  return {
+    lingshi: Math.floor(hours * rate.lingshiPerHour),
+    xiuwei: Math.floor(hours * rate.xiuweiPerHour),
+  };
+}
+
+function claimBattleReward() {
+  const reward = getPendingBattleReward();
+  if (reward.lingshi <= 0 && reward.xiuwei <= 0) { showAnnouncement('暂无挂机奖励可领取'); return; }
+  player.lingshi += reward.lingshi;
+  meta.xiuwei += reward.xiuwei;
+  meta.lastBattleReward = Date.now();
+  saveMeta();
+  showAnnouncement(`挂机历练收获：${reward.lingshi}灵石、${reward.xiuwei}修为！`);
+  updatePlayerUI();
+  renderBattlePanel();
+}
+
 // 战斗状态
 let battleState = null;
 
@@ -1429,6 +1472,7 @@ function finishBattle() {
     player.lingshi += rewardLingshi;
     meta.xiuwei += rewardXiuwei;
     meta.battleLevel++;
+    if (meta.battleLevel > meta.maxBattleLevel) meta.maxBattleLevel = meta.battleLevel;
     saveMeta();
     showToast(`胜利！获得${rewardLingshi}灵石、${rewardXiuwei}修为`, true);
   } else {
@@ -1479,7 +1523,7 @@ function getRealmBonuses() {
 }
 
 // 存档数据
-let meta = { tdaoPoints:0, abilities:{}, globalLingshi:null, xiuwei:0, lastMeditate:0, stamina:5, lastStaminaRecover:0, battleLevel:1, equippedArtifacts:[] };
+let meta = { tdaoPoints:0, abilities:{}, globalLingshi:null, xiuwei:0, lastMeditate:0, stamina:5, lastStaminaRecover:0, battleLevel:1, maxBattleLevel:1, lastBattleReward:0, equippedArtifacts:[] };
 
 function loadMeta() {
   try {
@@ -1494,6 +1538,8 @@ function loadMeta() {
       meta.stamina = typeof data.stamina === 'number' ? data.stamina : 5;
       meta.lastStaminaRecover = data.lastStaminaRecover || 0;
       meta.battleLevel = data.battleLevel || 1;
+      meta.maxBattleLevel = data.maxBattleLevel || 1;
+      meta.lastBattleReward = data.lastBattleReward || 0;
       meta.equippedArtifacts = data.equippedArtifacts || [];
     }
   } catch(e) { console.warn('存档读取失败', e); }
@@ -1711,7 +1757,7 @@ function openBattle() {
     if (document.getElementById('battleOverlay').classList.contains('show') && !battleState) {
       renderBattlePanel();
     }
-  }, 5000);
+  }, 3000);
 }
 function closeBattle() {
   document.getElementById('battleOverlay').classList.remove('show');
@@ -1731,6 +1777,9 @@ function renderBattlePanel() {
   const nextTime = getNextStaminaTime();
   const playerStats = getPlayerBattleStats();
   const monster = getMonsterForLevel(meta.battleLevel);
+  const idleReward = getPendingBattleReward();
+  const idleRate = getIdleBattleRate();
+  const idleLevel = getIdleBattleLevel();
   
   let nextTimeStr = '';
   if (nextTime > 0) {
@@ -1744,8 +1793,25 @@ function renderBattlePanel() {
       <div style="font-size:0.9rem;">第 <strong style="color:var(--gold);font-size:1.2rem;" class="text-numeric">${meta.battleLevel}</strong> 关</div>
       <div style="font-size:0.85rem;">⚡ 体力：<strong class="text-numeric" style="color:var(--gold);">${stamina}</strong>/5 ${nextTimeStr?'<span style="font-size:0.7rem;opacity:0.6;">'+nextTimeStr+'</span>':''}</div>
     </div>
-    
-    <div class="battle-arena">
+    `;
+
+  // 挂机历练状态（只要通关过1关就显示）
+  if (meta.maxBattleLevel > 1) {
+    html += `
+    <div style="background:linear-gradient(135deg,rgba(107,142,63,0.12),rgba(107,142,63,0.04));border:1px solid var(--jade);border-radius:8px;padding:12px;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span style="font-size:1.2rem;">🔄</span>
+        <span style="font-size:0.9rem;font-weight:bold;color:var(--jade);">挂机历练中</span>
+        <span style="font-size:0.7rem;opacity:0.6;margin-left:auto;">第${idleLevel}关 · ${idleRate.monster.icon}${idleRate.monster.name}</span>
+      </div>
+      <div style="font-size:0.75rem;opacity:0.7;margin-bottom:6px;">每小时：${idleRate.lingshiPerHour}灵石 / ${idleRate.xiuweiPerHour}修为（最多累积8小时）</div>
+      <div style="font-size:0.85rem;color:var(--jade);margin-bottom:6px;">待领取：<strong class="text-numeric">${idleReward.lingshi}</strong>灵石 · <strong class="text-numeric">${idleReward.xiuwei}</strong>修为</div>
+      <button class="btn btn-primary" style="padding:4px 16px;font-size:0.8rem;width:100%;${(idleReward.lingshi<=0&&idleReward.xiuwei<=0)?'opacity:0.5;':''}" ${(idleReward.lingshi<=0&&idleReward.xiuwei<=0)?'disabled':''} onclick="claimBattleReward()">领取挂机奖励</button>
+    </div>
+    `;
+  }
+
+  html += `<div class="battle-arena">
       <div style="text-align:center;margin-bottom:12px;">
         <div style="font-size:0.8rem;opacity:0.7;">即将挑战</div>
         <div style="font-size:3rem;">${monster.icon}</div>
@@ -4461,7 +4527,10 @@ function updateStartDisplay() {
   el.innerHTML += `<br>${info.realm.icon} 境界：<strong style="color:var(--vermilion);">${info.realm.name}${info.subLevel}层</strong> | 修为：${meta.xiuwei + pending}${pending>0?' <span style="color:var(--jade);font-size:0.75rem;">(+'+pending+'待结算)</span>':''}`;
   // 显示历练信息
   const stamina = getStamina();
-  el.innerHTML += `<br>⚔️ 历练：第${meta.battleLevel}关 | ⚡体力：${stamina}/5`;
+  const idleReward = getPendingBattleReward();
+  const idleStr = (meta.maxBattleLevel > 1 && (idleReward.lingshi > 0 || idleReward.xiuwei > 0))
+    ? ` | 🔄挂机：+${idleReward.lingshi}💎+${idleReward.xiuwei}🔮` : '';
+  el.innerHTML += `<br>⚔️ 历练：第${meta.battleLevel}关（最高${meta.maxBattleLevel}关） | ⚡体力：${stamina}/5${idleStr}`;
 }
 updateStartDisplay();
 
